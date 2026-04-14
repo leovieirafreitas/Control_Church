@@ -27,6 +27,11 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-color);
@@ -37,7 +42,8 @@ body {
 
 #root {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Animations */
@@ -193,25 +199,34 @@ body {
 .layout {
   display: flex;
   width: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
   width: 260px;
+  min-width: 260px;
+  height: 100vh;
   background: var(--surface);
   border-right: 1px solid var(--border-color);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .main-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .header {
   height: 70px;
+  flex-shrink: 0;
   background: var(--surface);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -222,7 +237,10 @@ body {
 .page-content {
   padding: 2rem;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .grid {
@@ -246,6 +264,65 @@ body {
   .grid-cols-2 { grid-template-columns: 1fr; }
   .grid-cols-3 { grid-template-columns: 1fr; }
   .grid-cols-4 { grid-template-columns: 1fr; }
+}
+
+/* ─── DEPARTMENTS PAGE ─────────────────────────────────────── */
+.dept-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dept-list-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Telas largas: formulário menor, lista maior */
+@media (min-width: 1400px) {
+  .dept-grid {
+    grid-template-columns: minmax(260px, 320px) 1fr;
+  }
+}
+
+/* Telas médias de desktop */
+@media (max-width: 1100px) {
+  .dept-grid {
+    grid-template-columns: minmax(200px, 260px) 1fr;
+  }
+}
+
+/* Telas pequenas / tablet — empilha verticalmente */
+@media (max-width: 820px) {
+  .dept-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+
+/* ─── VOLUNTEERS PAGE ─────────────────────────────────────── */
+.vol-list-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vol-table-wrap {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  min-height: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 /* Utility classes */

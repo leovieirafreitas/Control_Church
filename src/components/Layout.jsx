@@ -1,11 +1,13 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Bell, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const Layout = () => {
-  const { loading } = useApp();
+  const { loading, volunteerSearch, setVolunteerSearch } = useApp();
+  const location = useLocation();
+  const isVolunteers = location.pathname === '/volunteers';
 
   if (loading) {
     return (
@@ -21,12 +23,14 @@ const Layout = () => {
       <Sidebar />
       <div className="main-content">
         <header className="header justify-between">
-          <div style={{ position: 'relative', width: '300px' }}>
+          <div style={{ position: 'relative', width: '300px', visibility: 'hidden' }}>
             <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              placeholder="Pesquisar voluntários..." 
-              style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.5rem', borderRadius: '999px', border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-color)' }}
+            <input
+              type="text"
+              placeholder="Pesquisar voluntários..."
+              value={volunteerSearch}
+              onChange={(e) => setVolunteerSearch(e.target.value)}
+              style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 2.5rem', borderRadius: '999px', border: '1px solid var(--border-color)', outline: 'none', background: 'var(--bg-color)', fontFamily: 'Inter, sans-serif', fontSize: '0.875rem' }}
             />
           </div>
           <div className="flex items-center gap-4">

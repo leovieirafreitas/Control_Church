@@ -20,6 +20,7 @@ const Tithes = () => {
   const [filterMonth, setFilterMonth] = useState('all');
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [activeTab, setActiveTab] = useState('history');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -83,6 +84,19 @@ const Tithes = () => {
     return true;
   });
 
+  const pendingVolunteers = volunteers.filter(v => {
+    if (searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
+      return false;
+    }
+    const hasTithed = tithes.some(t => {
+      const d = new Date(t.date + 'T12:00:00');
+      const matchesYear = filterYear === 'all' ? true : d.getFullYear().toString() === filterYear;
+      const matchesMonth = filterMonth === 'all' ? true : (d.getMonth() + 1).toString() === filterMonth;
+      return t.volunteerId === v.id && matchesYear && matchesMonth;
+    });
+    return !hasTithed;
+  });
+
   const totalAmount = filteredTithes.reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
   const exportPDF = () => {
@@ -138,9 +152,39 @@ const Tithes = () => {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
-        <h2 className="text-2xl">Dízimos</h2>
-        <p className="text-muted">Registro e controle de dizimistas</p>
+      <div className="mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 className="text-2xl">Dízimos</h2>
+          <p className="text-muted">Registro e controle de dizimistas</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', background: 'var(--surface)', padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <input 
+            type="text" 
+            className="form-input" 
+            placeholder="Pesquisar dizimista..." 
+            value={searchVolunteer} 
+            onChange={e => setSearchVolunteer(e.target.value)} 
+            style={{ width: '220px', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} 
+          />
+          
+          <div style={{ width: '1px', height: '30px', background: 'var(--border-color)' }}></div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1' }}>Total Filtrado</span>
+            <span style={{ fontWeight: 'bold', color: 'var(--primary-dark)', fontSize: '1.2rem', lineHeight: '1.2' }}>{formatCurrency(totalAmount)}</span>
+          </div>
+          
+          <button 
+            onClick={exportPDF} 
+            className="btn btn-primary" 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', marginLeft: '0.5rem', fontSize: '0.9rem' }}
+            disabled={filteredTithes.length === 0}
+          >
+            <Download size={18} />
+            Exportar PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 mb-8">
@@ -191,11 +235,26 @@ const Tithes = () => {
           </form>
         </div>
 
-        {/* Histórico */}
+        {/* Histórico e Pendentes */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <h3 className="text-xl">Histórico de Dízimos</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              
+              <div style={{ display: 'flex', gap: '1.5rem' }}>
+                <button 
+                  onClick={() => setActiveTab('history')}
+                  style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'history' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'history' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
+                >
+                  Histórico de Dízimos
+                </button>
+                <button 
+                   onClick={() => setActiveTab('pending')}
+                  style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'pending' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'pending' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
+                >
+                  Pendentes no Mês ({pendingVolunteers.length})
+                </button>
+              </div>
+
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} ref={dropdownRef}>
                 <button 
                   className="btn btn-outline" 
@@ -263,76 +322,81 @@ const Tithes = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', background: 'var(--bg-color)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="Pesquisar por voluntário..." 
-                value={searchVolunteer} 
-                onChange={e => setSearchVolunteer(e.target.value)} 
-                style={{ width: '100%', maxWidth: '350px', background: 'transparent' }} 
-              />
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Total Filtrado</span>
-                  <span style={{ fontWeight: 'bold', color: 'var(--primary-dark)', fontSize: '1.5rem', lineHeight: 1 }}>{formatCurrency(totalAmount)}</span>
-                </div>
-                <button 
-                  onClick={exportPDF} 
-                  className="btn btn-primary" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
-                  disabled={filteredTithes.length === 0}
-                >
-                  <Download size={18} />
-                  Exportar PDF
-                </button>
-              </div>
-            </div>
+
           </div>
-          {filteredTithes.length > 0 ? (
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Voluntário</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...filteredTithes].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tithe) => {
-                    const volunteer = volunteers.find(v => v.id === tithe.volunteerId);
-                    return (
-                      <tr key={tithe.id}>
-                        <td>{new Date(tithe.date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
-                        <td className="font-bold">{volunteer?.name || 'Desconhecido'}</td>
-                        <td className="font-bold" style={{ color: 'var(--primary-dark)' }}>
-                          {formatCurrency(tithe.amount)}
-                        </td>
-                        <td><span className="badge badge-blue">Recebido</span></td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button 
-                            className="btn btn-icon"
-                            onClick={() => handleDeleteClick(tithe)}
-                            style={{ color: 'var(--danger)', padding: '0.25rem' }}
-                            title="Excluir"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          
+          {activeTab === 'history' ? (
+            filteredTithes.length > 0 ? (
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Voluntário</th>
+                      <th>Valor</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...filteredTithes].sort((a, b) => new Date(b.date) - new Date(a.date)).map((tithe) => {
+                      const volunteer = volunteers.find(v => v.id === tithe.volunteerId);
+                      return (
+                        <tr key={tithe.id}>
+                          <td>{new Date(tithe.date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+                          <td className="font-bold">{volunteer?.name || 'Desconhecido'}</td>
+                          <td className="font-bold" style={{ color: 'var(--primary-dark)' }}>
+                            {formatCurrency(tithe.amount)}
+                          </td>
+                          <td><span className="badge badge-blue">Recebido</span></td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button 
+                              className="btn btn-icon"
+                              onClick={() => handleDeleteClick(tithe)}
+                              style={{ color: 'var(--danger)', padding: '0.25rem' }}
+                              title="Excluir"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                Nenhum dízimo registrado.
+              </div>
+            )
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              Nenhum dízimo registrado.
-            </div>
+            pendingVolunteers.length > 0 ? (
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Voluntário</th>
+                      <th>Contato</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingVolunteers.map((vol) => (
+                      <tr key={vol.id}>
+                        <td className="font-bold">{vol.name}</td>
+                        <td>{vol.contact || '-'}</td>
+                        <td><span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>Pendente</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                Todos os voluntários já contribuíram neste período! 🎉
+              </div>
+            )
           )}
         </div>
       </div>

@@ -10,6 +10,7 @@ export const AppProvider = ({ children }) => {
   const [volunteers, setVolunteers] = useState([]);
   const [tithes, setTithes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [volunteerSearch, setVolunteerSearch] = useState('');
 
   // Carrega dados do Supabase ao iniciar
   useEffect(() => {
@@ -51,6 +52,23 @@ export const AppProvider = ({ children }) => {
       .select()
       .single();
     if (!error && data) setVolunteers(prev => [...prev, data]);
+  };
+
+  const updateVolunteer = async (id, volunteerData) => {
+    const { data, error } = await supabase
+      .from('volunteers')
+      .update({
+        name: volunteerData.name,
+        contact: volunteerData.contact,
+        department_ids: volunteerData.departmentIds ?? [],
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && data) {
+      setVolunteers(prev => prev.map(v => v.id === id ? data : v));
+    }
+    return { error };
   };
 
   // ── Dízimos ────────────────────────────────────────────────────
@@ -95,8 +113,11 @@ export const AppProvider = ({ children }) => {
     volunteers: volunteersNormalized,
     tithes: tithesNormalized,
     loading,
+    volunteerSearch,
+    setVolunteerSearch,
     addDepartment,
     addVolunteer,
+    updateVolunteer,
     registerTithe,
     deleteTithe,
     refetch: fetchAll,
