@@ -78,28 +78,16 @@ const PublicRegister = () => {
 
     setSubmitting(true);
     try {
-      // Create volunteer
-      const { data: volData, error: volError } = await supabase
+      // Create volunteer with department array
+      const { error: volError } = await supabase
         .from('volunteers')
-        .insert([{ name: formData.name, contact: formData.contact }])
-        .select()
-        .single();
+        .insert([{ 
+          name: formData.name, 
+          contact: formData.contact,
+          department_ids: formData.departmentIds 
+        }]);
 
       if (volError) throw volError;
-
-      // Create relationships
-      if (volData && formData.departmentIds.length > 0) {
-        const relations = formData.departmentIds.map(depId => ({
-          volunteer_id: volData.id,
-          department_id: depId
-        }));
-
-        const { error: relError } = await supabase
-          .from('volunteer_departments')
-          .insert(relations);
-
-        if (relError) throw relError;
-      }
 
       setSuccess(true);
       setFormData({ name: '', contact: '', departmentIds: [] });
