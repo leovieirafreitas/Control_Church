@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS = ['D','S','T','Q','Q','S','S'];
@@ -79,7 +79,15 @@ const DatePicker = ({ value, onChange }) => {
         <span className={`dp-trigger-text ${!selectedDate ? 'dp-placeholder' : ''}`}>
           {formatDisplay()}
         </span>
-        <span className="dp-trigger-arrow">{open ? '▴' : '▾'}</span>
+        <ChevronDown
+          size={16}
+          style={{
+            color: open ? 'var(--primary)' : 'var(--text-muted)',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.25s ease, color 0.2s ease',
+            flexShrink: 0,
+          }}
+        />
       </button>
 
       {open && (

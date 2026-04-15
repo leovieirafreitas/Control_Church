@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { DollarSign, Download, Trash2, X } from 'lucide-react';
+import { DollarSign, Download, Trash2, X, ChevronDown } from 'lucide-react';
 import VolunteerSearch from '../components/VolunteerSearch';
 import DatePicker from '../components/DatePicker';
 import jsPDF from 'jspdf';
@@ -8,20 +8,30 @@ import autoTable from 'jspdf-autotable';
 
 const Tithes = () => {
   const { volunteers, tithes, registerTithe, deleteTithe } = useApp();
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
     volunteerId: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0]
+    date: getLocalDateString()
   });
 
   const formatCurrency = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const [filterMonth, setFilterMonth] = useState('all');
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const now = new Date();
+  const [filterMonth, setFilterMonth] = useState((now.getMonth() + 1).toString());
+  const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [activeTab, setActiveTab] = useState('history');
   const dropdownRef = useRef(null);
+  const amountRef   = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -84,15 +94,22 @@ const Tithes = () => {
     return true;
   });
 
+  // Para pendentes: sempre filtra por mês específico.
+  // Se o usuário escolheu 'Todos os Meses', usa o mês/ano real atual como referência.
+  const pendingRefMonth = filterMonth === 'all' ? (now.getMonth() + 1).toString() : filterMonth;
+  const pendingRefYear  = filterYear  === 'all' ? now.getFullYear().toString()    : filterYear;
+
   const pendingVolunteers = volunteers.filter(v => {
     if (searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
       return false;
     }
     const hasTithed = tithes.some(t => {
       const d = new Date(t.date + 'T12:00:00');
-      const matchesYear = filterYear === 'all' ? true : d.getFullYear().toString() === filterYear;
-      const matchesMonth = filterMonth === 'all' ? true : (d.getMonth() + 1).toString() === filterMonth;
-      return t.volunteerId === v.id && matchesYear && matchesMonth;
+      return (
+        t.volunteerId === v.id &&
+        d.getFullYear().toString() === pendingRefYear &&
+        (d.getMonth() + 1).toString() === pendingRefMonth
+      );
     });
     return !hasTithed;
   });
@@ -151,83 +168,96 @@ const Tithes = () => {
 
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', flexShrink: 0 }}>
         <div>
-          <h2 className="text-2xl">Dízimos</h2>
-          <p className="text-muted">Registro e controle de dizimistas</p>
+          <h2 className="text-2xl" style={{ marginBottom: '0.1rem' }}>Dízimos</h2>
+          <p className="text-muted" style={{ fontSize: '0.82rem' }}>Registro e controle de dizimistas</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', background: 'var(--surface)', padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="Pesquisar dizimista..." 
-            value={searchVolunteer} 
-            onChange={e => setSearchVolunteer(e.target.value)} 
-            style={{ width: '220px', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="Pesquisar dizimista..."
+            value={searchVolunteer}
+            onChange={e => setSearchVolunteer(e.target.value)}
+            style={{ width: '280px', margin: 0, padding: '0.4rem 0.75rem', fontSize: '0.855rem' }}
           />
-          
-          <div style={{ width: '1px', height: '30px', background: 'var(--border-color)' }}></div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1' }}>Total Filtrado</span>
-            <span style={{ fontWeight: 'bold', color: 'var(--primary-dark)', fontSize: '1.2rem', lineHeight: '1.2' }}>{formatCurrency(totalAmount)}</span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Filtrado</span>
+            <span style={{ fontWeight: 700, color: 'var(--primary-dark)', fontSize: '1.05rem' }}>{formatCurrency(totalAmount)}</span>
           </div>
-          
-          <button 
-            onClick={exportPDF} 
-            className="btn btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', marginLeft: '0.5rem', fontSize: '0.9rem' }}
+
+          <button
+            onClick={exportPDF}
+            className="btn btn-primary"
+            style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', gap: '0.4rem' }}
             disabled={filteredTithes.length === 0}
           >
-            <Download size={18} />
+            <Download size={16} />
             Exportar PDF
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 mb-8">
-        {/* Formulário */}
-        <div className="card h-fit">
-          <h3 className="text-xl mb-4">Registrar Dízimo</h3>
-          <form onSubmit={handleSubmit}>
+      {/* ── Body: form + table ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '1.25rem', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
-            <div className="form-group">
-              <label className="form-label">Voluntário</label>
+        {/* ── Formulário compacto ── */}
+        <div className="card" style={{ padding: '1rem', alignSelf: 'start' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.875rem', color: 'var(--text-dark)' }}>Registrar Dízimo</h3>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Voluntário</label>
               <VolunteerSearch
                 volunteers={volunteers}
                 value={formData.volunteerId}
-                onChange={(id) => setFormData({ ...formData, volunteerId: id })}
+                onChange={(id) => setFormData(prev => ({ ...prev, volunteerId: id }))}
+                onSelected={() => amountRef.current?.focus()}
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Valor (R$)</label>
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Valor (R$)</label>
               <input
+                ref={amountRef}
                 type="number"
                 step="0.01"
                 min="0"
                 className="form-input"
                 placeholder="0,00"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (formData.volunteerId && formData.amount && formData.date) {
+                      handleSubmit(e);
+                    }
+                  }
+                }}
+                style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Data</label>
+            <div>
+              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Data</label>
               <DatePicker
                 value={formData.date}
-                onChange={(date) => setFormData({ ...formData, date })}
+                onChange={(date) => setFormData(prev => ({ ...prev, date }))}
               />
             </div>
 
             <button
               type="submit"
-              className="btn btn-primary mt-2"
-              style={{ width: '100%' }}
+              className="btn btn-primary"
+              style={{ width: '100%', marginTop: '0.375rem', fontSize: '0.875rem', padding: '0.55rem' }}
               disabled={!formData.volunteerId || !formData.amount || !formData.date}
             >
               Confirmar
@@ -235,8 +265,8 @@ const Tithes = () => {
           </form>
         </div>
 
-        {/* Histórico e Pendentes */}
-        <div className="card" style={{ gridColumn: 'span 2' }}>
+        {/* ── Histórico e Pendentes ── */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', padding: '1rem 1.25rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
               
@@ -251,7 +281,7 @@ const Tithes = () => {
                    onClick={() => setActiveTab('pending')}
                   style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'pending' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'pending' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
                 >
-                  Pendentes no Mês ({pendingVolunteers.length})
+                  Pendentes — {months.find(m => m.value === pendingRefMonth)?.label} ({pendingVolunteers.length})
                 </button>
               </div>
 
@@ -268,24 +298,65 @@ const Tithes = () => {
                   Hoje
                 </button>
 
+                {/* ── Month dropdown ── */}
                 <div style={{ position: 'relative' }}>
-                  <button 
-                    className="form-input flex items-center justify-between gap-2" 
-                    style={{ padding: '0.35rem 0.75rem', height: 'auto', fontSize: '0.875rem', minWidth: '130px', cursor: 'pointer', background: 'var(--bg-color)', color: 'var(--text-dark)' }}
+                  <button
                     onClick={() => setDropdownOpen(dropdownOpen === 'month' ? null : 'month')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.45rem 0.9rem',
+                      background: dropdownOpen === 'month' ? 'var(--primary-light)' : 'var(--surface)',
+                      border: `1.5px solid ${dropdownOpen === 'month' ? 'var(--primary)' : 'var(--border-color)'}`,
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: dropdownOpen === 'month' ? 'var(--primary-dark)' : 'var(--text-dark)',
+                      minWidth: '140px',
+                      boxShadow: dropdownOpen === 'month' ? '0 0 0 3px var(--primary-light)' : 'var(--shadow-sm)',
+                      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      justifyContent: 'space-between',
+                    }}
                   >
-                    <span style={{ fontWeight: 500 }}>{months.find(m => m.value === filterMonth)?.label}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>▼</span>
+                    <span>{months.find(m => m.value === filterMonth)?.label}</span>
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        color: dropdownOpen === 'month' ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'transform 0.25s ease',
+                        transform: dropdownOpen === 'month' ? 'rotate(180deg)' : 'rotate(0deg)',
+                        flexShrink: 0,
+                      }}
+                    />
                   </button>
                   {dropdownOpen === 'month' && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: '0.25rem', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                      minWidth: '100%', zIndex: 200,
+                      background: 'var(--surface)',
+                      border: '1.5px solid var(--primary)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 24px rgba(59,130,246,0.15)',
+                      padding: '0.35rem',
+                      maxHeight: '220px', overflowY: 'auto',
+                      animation: 'fadeIn 0.15s ease-out',
+                    }}>
                       {months.map(m => (
-                        <div 
-                          key={m.value} 
+                        <div
+                          key={m.value}
                           onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}
-                          style={{ padding: '0.5rem', cursor: 'pointer', borderRadius: '4px', fontSize: '0.875rem', background: filterMonth === m.value ? 'var(--primary-light)' : 'transparent', color: filterMonth === m.value ? 'var(--primary-dark)' : 'var(--text-dark)', fontWeight: filterMonth === m.value ? 600 : 400 }}
-                          onMouseOver={e => { if(filterMonth !== m.value) e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)' }}
-                          onMouseOut={e => { if(filterMonth !== m.value) e.currentTarget.style.background = 'transparent' }}
+                          style={{
+                            padding: '0.5rem 0.75rem',
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            fontSize: '0.875rem',
+                            fontWeight: filterMonth === m.value ? 600 : 400,
+                            background: filterMonth === m.value ? 'var(--primary-light)' : 'transparent',
+                            color: filterMonth === m.value ? 'var(--primary-dark)' : 'var(--text-dark)',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseOver={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
+                          onMouseOut={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'transparent'; }}
                         >
                           {m.label}
                         </div>
@@ -294,24 +365,65 @@ const Tithes = () => {
                   )}
                 </div>
 
+                {/* ── Year dropdown ── */}
                 <div style={{ position: 'relative' }}>
-                  <button 
-                    className="form-input flex items-center justify-between gap-2" 
-                    style={{ padding: '0.35rem 0.75rem', height: 'auto', fontSize: '0.875rem', minWidth: '90px', cursor: 'pointer', background: 'var(--bg-color)', color: 'var(--text-dark)' }}
+                  <button
                     onClick={() => setDropdownOpen(dropdownOpen === 'year' ? null : 'year')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.45rem 0.9rem',
+                      background: dropdownOpen === 'year' ? 'var(--primary-light)' : 'var(--surface)',
+                      border: `1.5px solid ${dropdownOpen === 'year' ? 'var(--primary)' : 'var(--border-color)'}`,
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: dropdownOpen === 'year' ? 'var(--primary-dark)' : 'var(--text-dark)',
+                      minWidth: '90px',
+                      boxShadow: dropdownOpen === 'year' ? '0 0 0 3px var(--primary-light)' : 'var(--shadow-sm)',
+                      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      justifyContent: 'space-between',
+                    }}
                   >
-                    <span style={{ fontWeight: 500 }}>{years.find(y => y.value === filterYear)?.label}</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>▼</span>
+                    <span>{years.find(y => y.value === filterYear)?.label}</span>
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        color: dropdownOpen === 'year' ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'transform 0.25s ease',
+                        transform: dropdownOpen === 'year' ? 'rotate(180deg)' : 'rotate(0deg)',
+                        flexShrink: 0,
+                      }}
+                    />
                   </button>
                   {dropdownOpen === 'year' && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: '0.25rem', padding: '0.25rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                      minWidth: '100%', zIndex: 200,
+                      background: 'var(--surface)',
+                      border: '1.5px solid var(--primary)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 24px rgba(59,130,246,0.15)',
+                      padding: '0.35rem',
+                      maxHeight: '220px', overflowY: 'auto',
+                      animation: 'fadeIn 0.15s ease-out',
+                    }}>
                       {years.map(y => (
-                        <div 
-                          key={y.value} 
+                        <div
+                          key={y.value}
                           onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}
-                          style={{ padding: '0.5rem', cursor: 'pointer', borderRadius: '4px', fontSize: '0.875rem', background: filterYear === y.value ? 'var(--primary-light)' : 'transparent', color: filterYear === y.value ? 'var(--primary-dark)' : 'var(--text-dark)', fontWeight: filterYear === y.value ? 600 : 400 }}
-                          onMouseOver={e => { if(filterYear !== y.value) e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)' }}
-                          onMouseOut={e => { if(filterYear !== y.value) e.currentTarget.style.background = 'transparent' }}
+                          style={{
+                            padding: '0.5rem 0.75rem',
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            fontSize: '0.875rem',
+                            fontWeight: filterYear === y.value ? 600 : 400,
+                            background: filterYear === y.value ? 'var(--primary-light)' : 'transparent',
+                            color: filterYear === y.value ? 'var(--primary-dark)' : 'var(--text-dark)',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseOver={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
+                          onMouseOut={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'transparent'; }}
                         >
                           {y.label}
                         </div>
@@ -327,7 +439,7 @@ const Tithes = () => {
           
           {activeTab === 'history' ? (
             filteredTithes.length > 0 ? (
-              <div className="table-container">
+              <div className="table-container" style={{ flex: 1, overflowY: 'auto' }}>
                 <table className="table">
                   <thead>
                     <tr>
@@ -372,7 +484,7 @@ const Tithes = () => {
             )
           ) : (
             pendingVolunteers.length > 0 ? (
-              <div className="table-container">
+              <div className="table-container" style={{ flex: 1, overflowY: 'auto' }}>
                 <table className="table">
                   <thead>
                     <tr>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useApp } from '../context/AppContext';
-import { Plus, Edit2, X, Check, Search } from 'lucide-react';
+import { Plus, Edit2, X, Check, Search, Trash2 } from 'lucide-react';
 
 /* ─── Modal de Novo Voluntário ─────────────────────────────── */
 const AddVolunteerModal = ({ departments, onSave, onClose }) => {
@@ -282,7 +282,7 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
 
 /* ─── Página Principal ─────────────────────────────────────── */
 const Volunteers = () => {
-  const { volunteers, addVolunteer, updateVolunteer, departments, volunteerSearch, setVolunteerSearch } = useApp();
+  const { volunteers, addVolunteer, updateVolunteer, deleteVolunteer, departments, volunteerSearch, setVolunteerSearch } = useApp();
   const [editingVolunteer, setEditingVolunteer] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -329,7 +329,7 @@ const Volunteers = () => {
                   <th>Contato</th>
                   <th>Departamentos</th>
                   <th>Cadastro</th>
-                  <th style={{ width: '60px' }}>Ações</th>
+                  <th style={{ width: '80px' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -347,15 +347,30 @@ const Volunteers = () => {
                     </td>
                     <td>{new Date(vol.createdAt).toLocaleDateString('pt-BR')}</td>
                     <td>
-                      <button
-                        onClick={() => setEditingVolunteer(vol)}
-                        style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
-                        onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-                        onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                        title="Editar"
-                      >
-                        <Edit2 size={16} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setEditingVolunteer(vol)}
+                          style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
+                          onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
+                          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Tem certeza que deseja excluir o voluntário ${vol.name}?`)) {
+                              deleteVolunteer(vol.id);
+                            }
+                          }}
+                          style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
+                          onMouseOver={e => e.currentTarget.style.color = 'var(--danger)'}
+                          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                          title="Excluir"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -42,12 +42,17 @@ export const AppProvider = ({ children }) => {
 
   // ── Voluntários ────────────────────────────────────────────────
   const addVolunteer = async (volunteerData) => {
+    const name = volunteerData.name;
+    const nameParts = name.trim().split(' ').filter(Boolean);
+    const initials = (nameParts[0]?.[0] ?? '') + (nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '');
+
     const { data, error } = await supabase
       .from('volunteers')
       .insert({
-        name: volunteerData.name,
+        name,
         contact: volunteerData.contact,
         department_ids: volunteerData.departmentIds ?? [],
+        initials: initials.toUpperCase(),
       })
       .select()
       .single();
@@ -55,18 +60,34 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateVolunteer = async (id, volunteerData) => {
+    const name = volunteerData.name;
+    const nameParts = name.trim().split(' ').filter(Boolean);
+    const initials = (nameParts[0]?.[0] ?? '') + (nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '');
+
     const { data, error } = await supabase
       .from('volunteers')
       .update({
-        name: volunteerData.name,
+        name,
         contact: volunteerData.contact,
         department_ids: volunteerData.departmentIds ?? [],
+        initials: initials.toUpperCase(),
       })
       .eq('id', id)
       .select()
       .single();
     if (!error && data) {
       setVolunteers(prev => prev.map(v => v.id === id ? data : v));
+    }
+    return { error };
+  };
+
+  const deleteVolunteer = async (id) => {
+    const { error } = await supabase
+      .from('volunteers')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      setVolunteers(prev => prev.filter(v => v.id !== id));
     }
     return { error };
   };
@@ -118,6 +139,7 @@ export const AppProvider = ({ children }) => {
     addDepartment,
     addVolunteer,
     updateVolunteer,
+    deleteVolunteer,
     registerTithe,
     deleteTithe,
     refetch: fetchAll,
