@@ -25,14 +25,14 @@ const PublicRegister = () => {
   const handlePhoneChange = (e) => {
     let v = e.target.value.replace(/\D/g, '');
     if (v.length > 11) v = v.substring(0, 11);
-    
+
     if (v.length > 2) {
       v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
     }
     if (v.length > 10) {
       v = `${v.substring(0, 10)}-${v.substring(10)}`;
     }
-    
+
     setFormData({ ...formData, contact: v });
   };
 
@@ -78,13 +78,21 @@ const PublicRegister = () => {
 
     setSubmitting(true);
     try {
+      // Calcula as iniciais (primeira letra do primeiro e do último nome)
+      const nameParts = formData.name.trim().split(' ').filter(Boolean);
+      const initials = (
+        (nameParts[0]?.[0] ?? '') +
+        (nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '')
+      ).toUpperCase();
+
       // Create volunteer with department array
       const { error: volError } = await supabase
         .from('volunteers')
-        .insert([{ 
-          name: formData.name, 
+        .insert([{
+          name: formData.name,
           contact: formData.contact,
-          department_ids: formData.departmentIds 
+          department_ids: formData.departmentIds,
+          initials,
         }]);
 
       if (volError) throw volError;
@@ -110,7 +118,7 @@ const PublicRegister = () => {
           </div>
           <h2 className="text-2xl" style={{ color: 'var(--primary-dark)', marginBottom: '0.5rem' }}>Cadastro Realizado!</h2>
           <p className="text-muted mb-6">
-            Obrigado por se inscrever. Seus dados foram enviados com sucesso para a ChamaChurch.
+            Obrigado por se inscrever. Seus dados foram enviados com sucesso para a Chama Church.
           </p>
           <button onClick={() => setSuccess(false)} className="btn btn-outline" style={{ width: '100%' }}>
             Realizar novo cadastro
@@ -166,11 +174,11 @@ const PublicRegister = () => {
 
             <div className="form-group mb-8" ref={dropdownRef}>
               <label className="form-label">Selecione seus Departamentos <span style={{ color: 'red' }}>*</span></label>
-              
+
               <div style={{ position: 'relative' }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  className="form-input"
                   placeholder="Pesquisar departamento..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -186,7 +194,7 @@ const PublicRegister = () => {
                       departments
                         .filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()))
                         .map(d => (
-                          <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: '6px', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background='rgba(59, 130, 246, 0.05)'} onMouseOut={e => e.currentTarget.style.background='transparent'}>
+                          <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem', borderRadius: '6px', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
                             <input
                               type="checkbox"
                               checked={formData.departmentIds.includes(d.id)}

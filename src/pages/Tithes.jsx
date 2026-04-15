@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { DollarSign, Download, Trash2, X, ChevronDown } from 'lucide-react';
+import { DollarSign, Download, Trash2, X, ChevronDown, CalendarX, CheckCircle, ScanLine } from 'lucide-react';
 import VolunteerSearch from '../components/VolunteerSearch';
 import DatePicker from '../components/DatePicker';
+import PdfScanner from '../components/PdfScanner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logoUrl from '../assets/logo.png';
 
 const Tithes = () => {
-  const { volunteers, tithes, registerTithe, deleteTithe } = useApp();
+  const { volunteers, tithes, churchSettings, registerTithe, deleteTithe } = useApp();
   const getLocalDateString = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -30,8 +32,9 @@ const Tithes = () => {
   const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [activeTab, setActiveTab] = useState('history');
+  const [showScanner, setShowScanner] = useState(false);
   const dropdownRef = useRef(null);
-  const amountRef   = useRef(null);
+  const amountRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -60,7 +63,7 @@ const Tithes = () => {
   ];
 
   const [searchVolunteer, setSearchVolunteer] = useState('');
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [titheToDelete, setTitheToDelete] = useState(null);
 
@@ -78,28 +81,33 @@ const Tithes = () => {
   };
 
   const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => ({ value: y.toString(), label: y.toString() }));
-  
+
   const filteredTithes = tithes.filter(t => {
     const d = new Date(t.date + 'T12:00:00');
     if (filterYear !== 'all' && d.getFullYear().toString() !== filterYear) return false;
     if (filterMonth !== 'all' && (d.getMonth() + 1).toString() !== filterMonth) return false;
-    
+
     if (searchVolunteer.trim() !== '') {
       const volunteer = volunteers.find(v => v.id === t.volunteerId);
       if (!volunteer || !volunteer.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
         return false;
       }
     }
-    
+
     return true;
   });
 
   // Para pendentes: sempre filtra por mês específico.
   // Se o usuário escolheu 'Todos os Meses', usa o mês/ano real atual como referência.
   const pendingRefMonth = filterMonth === 'all' ? (now.getMonth() + 1).toString() : filterMonth;
-  const pendingRefYear  = filterYear  === 'all' ? now.getFullYear().toString()    : filterYear;
+  const pendingRefYear = filterYear === 'all' ? now.getFullYear().toString() : filterYear;
 
-  const pendingVolunteers = volunteers.filter(v => {
+  // Meses futuros não têm pendentes (ainda não chegaram)
+  const refDate = new Date(parseInt(pendingRefYear), parseInt(pendingRefMonth) - 1, 1);
+  const nowMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const isFuture = refDate > nowMonth;
+
+  const pendingVolunteers = isFuture ? [] : volunteers.filter(v => {
     if (searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
       return false;
     }
@@ -118,18 +126,24 @@ const Tithes = () => {
 
   const exportPDF = () => {
     const doc = new jsPDF();
+    
+    // Add Logo
+    // params: image, type, x, y, width, height (fixed aspect ratio)
+    doc.addImage(logoUrl, 'PNG', 14, 10, 56, 12);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.text('Relatorio de Contribuicoes (Dizimos)', 14, 22);
-    
+    // Shifted text lower since logo is at top
+    doc.text('Relatório de Contribuições (Dízimos)', 14, 38);
+
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Periodo: ${months.find(m => m.value === filterMonth)?.label} de ${filterYear === 'all' ? 'Todos os Anos' : filterYear}`, 14, 30);
+    doc.text(`Período: ${months.find(m => m.value === filterMonth)?.label} de ${filterYear === 'all' ? 'Todos os Anos' : filterYear}`, 14, 46);
     if (searchVolunteer.trim() !== '') {
-      doc.text(`Filtro de Membro: ${searchVolunteer}`, 14, 36);
+      doc.text(`Filtro de Membro: ${searchVolunteer}`, 14, 52);
     }
 
-    const tableColumn = ["Data", "Voluntario", "Valor", "Status"];
+    const tableColumn = ["Data", "Voluntário", "Valor", "Status"];
     const tableRows = [];
 
     [...filteredTithes].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(tithe => {
@@ -146,14 +160,14 @@ const Tithes = () => {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: searchVolunteer.trim() !== '' ? 42 : 36,
+      startY: searchVolunteer.trim() !== '' ? 58 : 52,
       theme: 'grid',
       headStyles: { fillColor: [37, 99, 235] }
     });
 
-    const finalY = doc.lastAutoTable?.finalY || 42;
+    const finalY = doc.lastAutoTable?.finalY || 58;
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total Contribuido: ${formatCurrency(totalAmount)}`, 14, finalY + 10);
+    doc.text(`Total Contribuído: ${formatCurrency(totalAmount)}`, 14, finalY + 10);
 
     doc.save('relatorio_dizimos.pdf');
   };
@@ -200,6 +214,15 @@ const Tithes = () => {
           >
             <Download size={16} />
             Exportar PDF
+          </button>
+
+          <button
+            onClick={() => setShowScanner(true)}
+            className="btn btn-outline"
+            style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', gap: '0.4rem' }}
+          >
+            <ScanLine size={16} />
+            Analisar PDF (Beta)
           </button>
         </div>
       </div>
@@ -269,16 +292,16 @@ const Tithes = () => {
         <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', padding: '1rem 1.25rem' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-              
+
               <div style={{ display: 'flex', gap: '1.5rem' }}>
-                <button 
+                <button
                   onClick={() => setActiveTab('history')}
                   style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'history' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'history' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
                 >
                   Histórico de Dízimos
                 </button>
-                <button 
-                   onClick={() => setActiveTab('pending')}
+                <button
+                  onClick={() => setActiveTab('pending')}
                   style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'pending' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'pending' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
                 >
                   Pendentes — {months.find(m => m.value === pendingRefMonth)?.label} ({pendingVolunteers.length})
@@ -286,8 +309,8 @@ const Tithes = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} ref={dropdownRef}>
-                <button 
-                  className="btn btn-outline" 
+                <button
+                  className="btn btn-outline"
                   style={{ padding: '0.35rem 0.75rem', height: 'auto', fontSize: '0.875rem', fontWeight: 600 }}
                   onClick={() => {
                     const now = new Date();
@@ -436,7 +459,7 @@ const Tithes = () => {
 
 
           </div>
-          
+
           {activeTab === 'history' ? (
             filteredTithes.length > 0 ? (
               <div className="table-container" style={{ flex: 1, overflowY: 'auto' }}>
@@ -462,7 +485,7 @@ const Tithes = () => {
                           </td>
                           <td><span className="badge badge-blue">Recebido</span></td>
                           <td style={{ textAlign: 'right' }}>
-                            <button 
+                            <button
                               className="btn btn-icon"
                               onClick={() => handleDeleteClick(tithe)}
                               style={{ color: 'var(--danger)', padding: '0.25rem' }}
@@ -505,8 +528,20 @@ const Tithes = () => {
                 </table>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                Todos os voluntários já contribuíram neste período! 🎉
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', padding: '2rem', color: isFuture ? 'var(--text-muted)' : '#16a34a' }}>
+                {isFuture
+                  ? <CalendarX size={36} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                  : <CheckCircle size={36} style={{ color: '#16a34a' }} />}
+                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                  {isFuture
+                    ? 'Este mês ainda não chegou'
+                    : 'Todos os voluntários já contribuíram!'}
+                </span>
+                {isFuture && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                    Não é possível ter pendentes em meses futuros.
+                  </span>
+                )}
               </div>
             )
           )}
@@ -522,13 +557,13 @@ const Tithes = () => {
               Tem certeza que deseja excluir esta contribuição? O valor será permanentemente apagado dos relatórios.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button 
+              <button
                 onClick={() => setShowDeleteModal(false)}
                 style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 500 }}
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={confirmDelete}
                 style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: 'var(--danger)', color: 'white', cursor: 'pointer', fontWeight: 500 }}
               >
@@ -537,6 +572,17 @@ const Tithes = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* PDF Scanner Modal */}
+      {showScanner && (
+        <PdfScanner
+          volunteers={volunteers}
+          tithes={tithes}
+          churchSettings={churchSettings}
+          onRegister={registerTithe}
+          onClose={() => setShowScanner(false)}
+        />
       )}
     </div>
   );

@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [departments, setDepartments] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [tithes, setTithes] = useState([]);
+  const [churchSettings, setChurchSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [volunteerSearch, setVolunteerSearch] = useState('');
 
@@ -19,15 +20,28 @@ export const AppProvider = ({ children }) => {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [depts, vols, tiths] = await Promise.all([
+    const [depts, vols, tiths, settings] = await Promise.all([
       supabase.from('departments').select('*').order('name'),
       supabase.from('volunteers').select('*').order('name'),
       supabase.from('tithes').select('*').order('date', { ascending: false }),
+      supabase.from('church_settings').select('*').limit(1).single(),
     ]);
-    if (depts.data)  setDepartments(depts.data);
-    if (vols.data)   setVolunteers(vols.data);
-    if (tiths.data)  setTithes(tiths.data);
+    if (depts.data)    setDepartments(depts.data);
+    if (vols.data)     setVolunteers(vols.data);
+    if (tiths.data)    setTithes(tiths.data);
+    if (settings.data) setChurchSettings(settings.data);
     setLoading(false);
+  };
+
+  const updateChurchSettings = async (data) => {
+    const { data: updated, error } = await supabase
+      .from('church_settings')
+      .update(data)
+      .eq('id', churchSettings?.id)
+      .select()
+      .single();
+    if (!error && updated) setChurchSettings(updated);
+    return { error };
   };
 
   // ── Departamentos ──────────────────────────────────────────────
@@ -133,6 +147,8 @@ export const AppProvider = ({ children }) => {
     departments,
     volunteers: volunteersNormalized,
     tithes: tithesNormalized,
+    churchSettings,
+    updateChurchSettings,
     loading,
     volunteerSearch,
     setVolunteerSearch,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const Layout = () => {
@@ -34,16 +34,14 @@ const Layout = () => {
             />
           </div>
           <div className="flex items-center gap-4">
-            <button className="btn btn-outline" style={{ padding: '0.5rem', borderRadius: '50%' }}>
-              <Bell size={20} />
-            </button>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                 CC
               </div>
               <div>
                 <div className="text-sm font-bold">Admin</div>
-                <div className="text-sm text-muted" style={{ fontSize: '0.75rem' }}>ChamaChurch</div>
+                <div className="text-sm text-muted" style={{ fontSize: '0.75rem' }}>Chama Church</div>
               </div>
             </div>
           </div>

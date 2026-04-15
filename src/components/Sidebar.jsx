@@ -26,7 +26,7 @@ const Sidebar = () => {
     <aside className="sidebar">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8" style={{ padding: '0.5rem' }}>
-        <img src={logoImg} alt="ChamaChurch Logo" style={{ maxWidth: '100%', height: '45px', objectFit: 'contain', marginLeft: '-0.5rem' }} />
+        <img src={logoImg} alt="ChamaChurch Logo" style={{ maxWidth: '100%', height: '28px', objectFit: 'contain', marginLeft: '-0.5rem' }} />
       </div>
 
       {/* Nav */}

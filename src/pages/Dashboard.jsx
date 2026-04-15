@@ -8,7 +8,7 @@ const Dashboard = () => {
 
   const now = new Date();
   const [filterMonth, setFilterMonth] = useState((now.getMonth() + 1).toString());
-  const [filterYear,  setFilterYear]  = useState(now.getFullYear().toString());
+  const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const dropdownRef = useRef(null);
 
@@ -24,18 +24,18 @@ const Dashboard = () => {
 
   const months = [
     { value: 'all', label: 'Todos os Meses' },
-    { value: '1',  label: 'Janeiro'   },
-    { value: '2',  label: 'Fevereiro' },
-    { value: '3',  label: 'Março'     },
-    { value: '4',  label: 'Abril'     },
-    { value: '5',  label: 'Maio'      },
-    { value: '6',  label: 'Junho'     },
-    { value: '7',  label: 'Julho'     },
-    { value: '8',  label: 'Agosto'    },
-    { value: '9',  label: 'Setembro'  },
-    { value: '10', label: 'Outubro'   },
-    { value: '11', label: 'Novembro'  },
-    { value: '12', label: 'Dezembro'  },
+    { value: '1', label: 'Janeiro' },
+    { value: '2', label: 'Fevereiro' },
+    { value: '3', label: 'Março' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Maio' },
+    { value: '6', label: 'Junho' },
+    { value: '7', label: 'Julho' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
   ];
 
   const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030]
@@ -43,7 +43,7 @@ const Dashboard = () => {
 
   const filteredTithes = tithes.filter(t => {
     const d = new Date(t.date + 'T12:00:00');
-    if (filterYear  !== 'all' && d.getFullYear().toString()     !== filterYear)  return false;
+    if (filterYear !== 'all' && d.getFullYear().toString() !== filterYear) return false;
     if (filterMonth !== 'all' && (d.getMonth() + 1).toString() !== filterMonth) return false;
     return true;
   });
@@ -52,19 +52,19 @@ const Dashboard = () => {
 
   // Pendentes: voluntários que NÃO diezmaram no mês/ano de referência
   const pendingRefMonth = filterMonth === 'all' ? (now.getMonth() + 1).toString() : filterMonth;
-  const pendingRefYear  = filterYear  === 'all' ? now.getFullYear().toString()    : filterYear;
+  const pendingRefYear = filterYear === 'all' ? now.getFullYear().toString() : filterYear;
 
   // Meses futuros não têm pendentes (ainda não chegaram)
-  const refDate    = new Date(parseInt(pendingRefYear), parseInt(pendingRefMonth) - 1, 1);
-  const nowMonth   = new Date(now.getFullYear(), now.getMonth(), 1);
-  const isFuture   = refDate > nowMonth;
+  const refDate = new Date(parseInt(pendingRefYear), parseInt(pendingRefMonth) - 1, 1);
+  const nowMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const isFuture = refDate > nowMonth;
 
   const pendingVolunteers = isFuture ? [] : volunteers.filter(v => {
     return !tithes.some(t => {
       const d = new Date(t.date + 'T12:00:00');
       return (
         t.volunteerId === v.id &&
-        d.getFullYear().toString()     === pendingRefYear &&
+        d.getFullYear().toString() === pendingRefYear &&
         (d.getMonth() + 1).toString() === pendingRefMonth
       );
     });
@@ -113,7 +113,7 @@ const Dashboard = () => {
     fontSize: '0.875rem',
     fontWeight: active ? 600 : 400,
     background: active ? 'var(--primary-light)' : 'transparent',
-    color:      active ? 'var(--primary-dark)'   : 'var(--text-dark)',
+    color: active ? 'var(--primary-dark)' : 'var(--text-dark)',
     transition: 'background 0.15s',
   });
 
@@ -123,7 +123,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl">Dashboard</h2>
-          <p className="text-muted">Visão geral da ChamaChurch</p>
+          <p className="text-muted">Visão geral da Chama Church</p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -148,7 +148,7 @@ const Dashboard = () => {
                       style={dropItem(filterMonth === m.value)}
                       onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}
                       onMouseOver={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
-                      onMouseOut={e  => { if (filterMonth !== m.value) e.currentTarget.style.background = 'transparent'; }}
+                      onMouseOut={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'transparent'; }}
                     >{m.label}</div>
                   ))}
                 </div>
@@ -174,7 +174,7 @@ const Dashboard = () => {
                       style={dropItem(filterYear === y.value)}
                       onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}
                       onMouseOver={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
-                      onMouseOut={e  => { if (filterYear !== y.value) e.currentTarget.style.background = 'transparent'; }}
+                      onMouseOut={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'transparent'; }}
                     >{y.label}</div>
                   ))}
                 </div>
