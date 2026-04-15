@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Grid, DollarSign, ArrowUpRight, ChevronDown, Clock, CalendarX, CheckCircle } from 'lucide-react';
+import { Users, Grid, DollarSign, ArrowUpRight, TrendingUp, TrendingDown, ChevronDown, Clock, CalendarX, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -49,6 +49,39 @@ const Dashboard = () => {
   });
 
   const totalTithes = filteredTithes.reduce((acc, curr) => acc + curr.amount, 0);
+
+  // --- Tendência ---
+  const getTendency = () => {
+    if (filterMonth === 'all' || filterYear === 'all') return null;
+    
+    let prevMonth = parseInt(filterMonth) - 1;
+    let prevYear = parseInt(filterYear);
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear -= 1;
+    }
+    
+    const prevTithes = tithes.filter(t => {
+      const d = new Date(t.date + 'T12:00:00');
+      return d.getFullYear() === prevYear && (d.getMonth() + 1) === prevMonth;
+    });
+    
+    const prevTotal = prevTithes.reduce((acc, curr) => acc + curr.amount, 0);
+    const prevMonthLabel = months.find(m => m.value === prevMonth.toString())?.label || 'mês anterior';
+
+    if (prevTotal === 0 && totalTithes === 0) return null;
+    if (prevTotal === 0 && totalTithes > 0) return { percent: 100, isPositive: true, text: `Novo registro! (vs ${prevMonthLabel})` };
+    
+    const diff = totalTithes - prevTotal;
+    const percent = Math.abs((diff / prevTotal) * 100).toFixed(1);
+    
+    return {
+      percent: percent.replace('.0', ''),
+      isPositive: diff >= 0,
+      text: `vs ${prevMonthLabel}`
+    };
+  };
+  const tendency = getTendency();
 
   // Pendentes: voluntários que NÃO diezmaram no mês/ano de referência
   const pendingRefMonth = filterMonth === 'all' ? (now.getMonth() + 1).toString() : filterMonth;
@@ -202,10 +235,24 @@ const Dashboard = () => {
               <DollarSign size={24} />
             </div>
           </div>
-          <div className="text-sm text-muted flex items-center gap-1">
-            <ArrowUpRight size={16} color="var(--primary)" />
-            <span style={{ color: 'var(--primary)' }}>Sempre pontuais</span>
-          </div>
+          {tendency ? (
+            <div className="text-sm flex items-center gap-1">
+              {tendency.isPositive ? (
+                <TrendingUp size={16} color="#16a34a" />
+              ) : (
+                <TrendingDown size={16} color="#dc2626" />
+              )}
+              <span style={{ color: tendency.isPositive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                {tendency.isPositive ? '+' : '-'}{tendency.percent}%
+              </span>
+              <span className="text-muted ml-1" style={{ fontSize: '0.75rem' }}>{tendency.text}</span>
+            </div>
+          ) : (
+            <div className="text-sm text-muted flex items-center gap-1">
+              <DollarSign size={16} color="var(--primary)" />
+              <span style={{ color: 'var(--primary)' }}>Arrecadação total</span>
+            </div>
+          )}
         </div>
 
         {/* Total Voluntários */}

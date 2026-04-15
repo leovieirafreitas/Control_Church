@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 import logoUrl from '../assets/logo.png';
 
 const Tithes = () => {
-  const { volunteers, tithes, churchSettings, registerTithe, deleteTithe } = useApp();
+  const { volunteers, tithes, churchSettings, departments, registerTithe, deleteTithe } = useApp();
   const getLocalDateString = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -30,6 +30,7 @@ const Tithes = () => {
   const now = new Date();
   const [filterMonth, setFilterMonth] = useState((now.getMonth() + 1).toString());
   const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
+  const [filterDepartment, setFilterDepartment] = useState('all');
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [activeTab, setActiveTab] = useState('history');
   const [showScanner, setShowScanner] = useState(false);
@@ -87,8 +88,13 @@ const Tithes = () => {
     if (filterYear !== 'all' && d.getFullYear().toString() !== filterYear) return false;
     if (filterMonth !== 'all' && (d.getMonth() + 1).toString() !== filterMonth) return false;
 
+    const volunteer = volunteers.find(v => v.id === t.volunteerId);
+
+    if (filterDepartment !== 'all') {
+      if (!volunteer || !volunteer.departmentIds?.includes(filterDepartment)) return false;
+    }
+
     if (searchVolunteer.trim() !== '') {
-      const volunteer = volunteers.find(v => v.id === t.volunteerId);
       if (!volunteer || !volunteer.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
         return false;
       }
@@ -108,6 +114,8 @@ const Tithes = () => {
   const isFuture = refDate > nowMonth;
 
   const pendingVolunteers = isFuture ? [] : volunteers.filter(v => {
+    if (filterDepartment !== 'all' && !v.departmentIds?.includes(filterDepartment)) return false;
+    
     if (searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
       return false;
     }
@@ -139,8 +147,17 @@ const Tithes = () => {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Período: ${months.find(m => m.value === filterMonth)?.label} de ${filterYear === 'all' ? 'Todos os Anos' : filterYear}`, 14, 46);
+    
+    let currentY = 52;
+    if (filterDepartment !== 'all') {
+      const deptName = departments?.find(d => d.id === filterDepartment)?.name || 'Desconhecido';
+      doc.text(`Departamento: ${deptName}`, 14, currentY);
+      currentY += 6;
+    }
+
     if (searchVolunteer.trim() !== '') {
-      doc.text(`Filtro de Membro: ${searchVolunteer}`, 14, 52);
+      doc.text(`Filtro de Membro: ${searchVolunteer}`, 14, currentY);
+      currentY += 6;
     }
 
     const tableColumn = ["Data", "Voluntário", "Valor", "Status"];
@@ -160,12 +177,12 @@ const Tithes = () => {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: searchVolunteer.trim() !== '' ? 58 : 52,
+      startY: currentY,
       theme: 'grid',
       headStyles: { fillColor: [37, 99, 235] }
     });
 
-    const finalY = doc.lastAutoTable?.finalY || 58;
+    const finalY = doc.lastAutoTable?.finalY || currentY;
     doc.setFont('helvetica', 'bold');
     doc.text(`Total Contribuído: ${formatCurrency(totalAmount)}`, 14, finalY + 10);
 
@@ -316,10 +333,86 @@ const Tithes = () => {
                     const now = new Date();
                     setFilterMonth((now.getMonth() + 1).toString());
                     setFilterYear(now.getFullYear().toString());
+                    setFilterDepartment('all');
                   }}
                 >
                   Hoje
                 </button>
+
+                {/* ── Department dropdown ── */}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setDropdownOpen(dropdownOpen === 'dept' ? null : 'dept')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.45rem 0.9rem',
+                      background: dropdownOpen === 'dept' ? 'var(--primary-light)' : 'var(--surface)',
+                      border: `1.5px solid ${dropdownOpen === 'dept' ? 'var(--primary)' : 'var(--border-color)'}`,
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      color: dropdownOpen === 'dept' ? 'var(--primary-dark)' : 'var(--text-dark)',
+                      minWidth: '160px',
+                      boxShadow: dropdownOpen === 'dept' ? '0 0 0 3px var(--primary-light)' : 'var(--shadow-sm)',
+                      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {filterDepartment === 'all' 
+                        ? 'Todos Departamentos' 
+                        : departments?.find(d => d.id === filterDepartment)?.name || 'Todos Departamentos'}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        color: dropdownOpen === 'dept' ? 'var(--primary)' : 'var(--text-muted)',
+                        transition: 'transform 0.25s ease',
+                        transform: dropdownOpen === 'dept' ? 'rotate(180deg)' : 'rotate(0deg)',
+                      }}
+                    />
+                  </button>
+
+                  {dropdownOpen === 'dept' && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: '6px',
+                      background: 'var(--surface)', border: '1px solid var(--border-color)',
+                      borderRadius: '10px', boxShadow: 'var(--shadow-lg)',
+                      zIndex: 50, minWidth: '220px', padding: '0.5rem',
+                      maxHeight: '300px', overflowY: 'auto',
+                      animation: 'fadeIn 0.15s ease-out'
+                    }}>
+                      <button
+                        onClick={() => { setFilterDepartment('all'); setDropdownOpen(null); }}
+                        style={{
+                          width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left',
+                          background: filterDepartment === 'all' ? 'var(--bg-color)' : 'transparent',
+                          border: 'none', borderRadius: '6px', cursor: 'pointer',
+                          fontSize: '0.875rem', fontWeight: filterDepartment === 'all' ? 600 : 400,
+                          color: filterDepartment === 'all' ? 'var(--primary-dark)' : 'var(--text-dark)'
+                        }}
+                      >
+                        Todos Departamentos
+                      </button>
+                      {departments?.map(dept => (
+                        <button
+                          key={dept.id}
+                          onClick={() => { setFilterDepartment(dept.id); setDropdownOpen(null); }}
+                          style={{
+                            width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left',
+                            background: filterDepartment === dept.id ? 'var(--bg-color)' : 'transparent',
+                            border: 'none', borderRadius: '6px', cursor: 'pointer',
+                            fontSize: '0.875rem', fontWeight: filterDepartment === dept.id ? 600 : 400,
+                            color: filterDepartment === dept.id ? 'var(--primary-dark)' : 'var(--text-dark)'
+                          }}
+                        >
+                          {dept.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* ── Month dropdown ── */}
                 <div style={{ position: 'relative' }}>
@@ -479,7 +572,21 @@ const Tithes = () => {
                       return (
                         <tr key={tithe.id}>
                           <td>{new Date(tithe.date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
-                          <td className="font-bold">{volunteer?.name || 'Desconhecido'}</td>
+                          <td className="font-bold">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span>{volunteer?.name || 'Desconhecido'}</span>
+                              <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                                {volunteer?.departmentIds?.map(id => {
+                                  const dept = departments?.find(d => d.id === id);
+                                  return dept ? (
+                                    <span key={id} style={{ fontSize: '0.65rem', fontWeight: 600, background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.1rem 0.4rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                      {dept.name}
+                                    </span>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                          </td>
                           <td className="font-bold" style={{ color: 'var(--primary-dark)' }}>
                             {formatCurrency(tithe.amount)}
                           </td>
@@ -519,7 +626,21 @@ const Tithes = () => {
                   <tbody>
                     {pendingVolunteers.map((vol) => (
                       <tr key={vol.id}>
-                        <td className="font-bold">{vol.name}</td>
+                        <td className="font-bold">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span>{vol.name}</span>
+                            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                              {vol.departmentIds?.map(id => {
+                                const dept = departments?.find(d => d.id === id);
+                                return dept ? (
+                                  <span key={id} style={{ fontSize: '0.65rem', fontWeight: 600, background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.1rem 0.4rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                    {dept.name}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                        </td>
                         <td>{vol.contact || '-'}</td>
                         <td><span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>Pendente</span></td>
                       </tr>
