@@ -223,16 +223,23 @@ body {
   overflow: hidden;
 }
 
+.sidebar-container {
+  height: 100vh;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
 .sidebar {
   width: 260px;
   min-width: 260px;
-  height: 100vh;
+  height: 100%;
   background: var(--surface);
   border-right: 1px solid var(--border-color);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto; /* Enable internal scroll if items are too many */
+  overflow-x: hidden;
 }
 
 .main-content {
@@ -242,6 +249,7 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .header {
@@ -251,16 +259,56 @@ body {
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
+}
+
+.search-container-desktop {
+  position: relative;
+  width: 300px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .page-content {
-  padding: 2rem;
+  padding: 1.5rem;
   flex: 1;
-  overflow: hidden;
-  min-height: 0;
+  overflow: hidden; /* Prevent page scroll */
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Critical for flex scrolling children */
+}
+
+/* Dashboard specific responsive grids */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
 }
 
 .grid {
@@ -273,20 +321,125 @@ body {
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
 
+@media (max-width: 1200px) {
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 1024px) {
   .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+  .header { padding: 0 1rem; }
+  .search-container-desktop { width: 220px; }
 }
 
 @media (max-width: 768px) {
-  .layout { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); }
-  .grid-cols-2 { grid-template-columns: 1fr; }
-  .grid-cols-3 { grid-template-columns: 1fr; }
-  .grid-cols-4 { grid-template-columns: 1fr; }
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-container.open {
+    transform: translateX(0);
+  }
+
+  .sidebar {
+    width: 280px;
+    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .search-container-desktop {
+    display: none;
+  }
+
+  .user-info-desktop {
+    display: none;
+  }
+
+  .page-content {
+    padding: 1rem;
+    overflow-y: auto;
+    height: auto;
+    display: block; /* Stack elements naturally */
+  }
+
+  .main-content, .layout, #root, body, html {
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh;
+  }
+
+  .grid-cols-2, .grid-cols-3, .grid-cols-4, .dashboard-grid, .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-bottom-grid {
+    flex: none;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Mobile specific scroll behavior */
+  .flex-container {
+    height: auto !important;
+    display: block !important;
+  }
+  
+  .flex-card {
+    height: auto !important;
+    flex: none !important;
+  }
+
+  .scroll-area {
+    max-height: 70vh; /* Increase height on mobile to fill more space */
+    overflow-y: auto;
+    flex: none !important;
+  }
 }
 
-/* ─── DEPARTMENTS PAGE ─────────────────────────────────────── */
+/* ─── Flexible Layout Utilities (Desktop Defaults) ─── */
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.flex-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 .dept-grid {
   display: grid;
   gap: 1.5rem;
@@ -408,6 +561,35 @@ body {
 }
 
 /* Card glassmorphism */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem; /* Padding to prevent touching edges */
+}
+
+.modal-content {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 2rem); /* Ensure it doesn't exceed screen height */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; /* This preserves the rounded corners at the bottom */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalEnter 0.3s ease-out;
+}
+
 .login-card {
   position: relative;
   z-index: 10;

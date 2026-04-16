@@ -7,18 +7,10 @@ import { Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 /* ─── Modal de Novo Departamento ────────────────────────────── */
 const AddDepartmentModal = ({ onClose, onSubmit, name, setName }) => {
   return ReactDOM.createPortal(
-    <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      animation: 'fadeIn 0.2s ease-out'
-    }}>
-      <div style={{
-        background: 'var(--surface)', borderRadius: '16px', width: '100%',
-        maxWidth: '400px', border: '1px solid var(--border-color)',
-        boxShadow: '0 20px 60px rgba(15,23,42,0.18)', overflow: 'hidden'
-      }}>
+    <div className="modal-overlay">
+      <div className="modal-content">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-dark)' }}>
             Novo Departamento
           </h3>
@@ -71,12 +63,8 @@ const AddDepartmentModal = ({ onClose, onSubmit, name, setName }) => {
 /* ─── Modal de Exclusão ────────────────────────────────────── */
 const DeleteDepartmentModal = ({ onCancel, onConfirm }) => {
   return ReactDOM.createPortal(
-    <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      animation: 'fadeIn 0.2s ease-out'
-    }}>
-      <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '90%', border: '1px solid var(--border-color)', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ padding: '2rem', maxWidth: '400px' }}>
         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--text-dark)' }}>Confirmar Exclusão</h3>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
           Tem certeza que deseja excluir este departamento? Vínculos com voluntários serão afetados.
@@ -154,7 +142,7 @@ const Departments = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="animate-fade-in flex-container">
       <div className="mb-6" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 className="text-2xl">Departamentos</h2>
@@ -169,8 +157,8 @@ const Departments = () => {
         </button>
       </div>
 
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="card flex-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 }}>
           <h3 className="text-xl">Lista de Departamentos ({filteredDepartments.length})</h3>
           <input 
             type="text" 
@@ -183,7 +171,7 @@ const Departments = () => {
         </div>
 
         {filteredDepartments.length > 0 ? (
-          <div className="table-container" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div className="table-container scroll-area">
             <table className="table" style={{ position: 'relative' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--bg-color)' }}>
                 <tr>

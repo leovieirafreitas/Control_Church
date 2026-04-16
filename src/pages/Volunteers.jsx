@@ -32,10 +32,10 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
       return;
     }
     setSaving(true);
-    
+
     // Salva o voluntário
     await onSave({ name: name.trim(), contact, departmentIds });
-    
+
     // Envia Boas-Vindas se solicitado
     if (sendWelcome && contact) {
       const welcomeTemplate = templates.find(t => t.id === 'welcome');
@@ -43,7 +43,7 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
         const number = contact.replace(/\D/g, '');
         const formattedNumber = number.startsWith('55') ? number : `55${number}`;
         const volDepts = departmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', ');
-        
+
         const message = welcomeTemplate.text
           .replace(/{{nome}}/g, name.trim())
           .replace(/{{departamentos}}/g, volDepts);
@@ -70,20 +70,12 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
     onClose();
   };
 
-  const filtered = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase()));
+  const filtered = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
 
   return ReactDOM.createPortal(
-    <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      animation: 'fadeIn 0.2s ease-out'
-    }}>
-      <div style={{
-        background: 'var(--surface)', borderRadius: '16px', width: '100%',
-        maxWidth: '540px', border: '1px solid var(--border-color)',
-        boxShadow: '0 20px 60px rgba(15,23,42,0.18)', overflow: 'hidden'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Novo Voluntário</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: '4px', borderRadius: '8px' }}>
             <X size={20} />
@@ -187,21 +179,13 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
 
   const filtered = departments.filter(d =>
     d.name.toLowerCase().includes(deptSearch.toLowerCase())
-  );
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   return ReactDOM.createPortal(
-    <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.55)',
-      zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      animation: 'fadeIn 0.2s ease-out'
-    }}>
-      <div style={{
-        background: 'var(--surface)', borderRadius: '16px', width: '100%',
-        maxWidth: '540px', border: '1px solid var(--border-color)',
-        boxShadow: '0 20px 60px rgba(15,23,42,0.18)', overflow: 'hidden'
-      }}>
+    <div className="modal-overlay">
+      <div className="modal-content">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-dark)' }}>
             Editar Voluntário
           </h3>
@@ -318,7 +302,7 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
         </div>
       </div>
     </div>
-  , document.body);
+    , document.body);
 };
 
 /* ─── Página Principal ─────────────────────────────────────── */
@@ -327,12 +311,14 @@ const Volunteers = () => {
   const [editingVolunteer, setEditingVolunteer] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const filteredVolunteers = volunteers.filter(v =>
-    v.name.toLowerCase().includes(volunteerSearch.toLowerCase())
-  );
+  const filteredVolunteers = React.useMemo(() => {
+    return [...volunteers]
+      .filter(v => v.name.toLowerCase().includes(volunteerSearch.toLowerCase()))
+      .sort((a, b) => a.name.trim().localeCompare(b.name.trim(), 'pt-BR', { sensitivity: 'base' }));
+  }, [volunteers, volunteerSearch]);
 
   return (
-    <div className="animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="animate-fade-in flex-container">
       <div className="mb-6" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h2 className="text-2xl">Voluntários</h2>
@@ -348,8 +334,8 @@ const Volunteers = () => {
       </div>
 
       {/* Lista */}
-      <div className="card vol-list-card" style={{ flex: 1 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="card vol-list-card flex-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 }}>
           <h3 className="text-xl">Lista de Voluntários ({filteredVolunteers.length})</h3>
           <input
             type="text"
@@ -362,7 +348,7 @@ const Volunteers = () => {
         </div>
 
         {volunteers.length > 0 ? (
-          <div className="vol-table-wrap">
+          <div className="vol-table-wrap scroll-area">
             <table className="table">
               <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--bg-color)' }}>
                 <tr>

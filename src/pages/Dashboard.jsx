@@ -151,9 +151,9 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <div className="animate-fade-in flex-container">
       {/* ── Header ── */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="dashboard-header" style={{ flexShrink: 0 }}>
         <div>
           <h2 className="text-2xl">Dashboard</h2>
           <p className="text-muted">Visão geral da Chama Church</p>
@@ -215,14 +215,14 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <Link to="/tithes" className="btn btn-primary" style={{ flexShrink: 0 }}>
+          <Link to="/tithes" className="btn btn-primary hide-mobile" style={{ flexShrink: 0 }}>
             Registrar Dízimo
           </Link>
         </div>
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-4 mb-8">
+      <div className="dashboard-grid" style={{ flexShrink: 0 }}>
 
         {/* Total Arrecadado */}
         <div className="card">
@@ -306,15 +306,15 @@ const Dashboard = () => {
       </div>
 
       {/* ── Bottom Panels: 2 colunas ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+      <div className="dashboard-bottom-grid flex-area" style={{ flex: 1, minHeight: 0 }}>
 
         {/* Dízimos Recentes */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          <h3 className="text-xl mb-4">Dízimos Recentes</h3>
+        <div className="card flex-card">
+          <h3 className="text-xl mb-4" style={{ flexShrink: 0 }}>Dízimos Recentes</h3>
           {recentTithes.length > 0 ? (
-            <div className="table-container" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            <div className="table-container scroll-area">
               <table className="table">
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--surface)' }}>
                   <tr>
                     <th>Voluntário</th>
                     <th>Contato</th>
@@ -344,8 +344,8 @@ const Dashboard = () => {
         </div>
 
         {/* Dizimistas Pendentes */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div className="card flex-card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
             <h3 className="text-xl">Dizimistas Pendentes</h3>
             <span style={{
               background: pendingCount > 0 ? '#fee2e2' : '#dcfce7',
@@ -358,9 +358,9 @@ const Dashboard = () => {
           </div>
 
           {pendingVolunteers.length > 0 ? (
-            <div className="table-container" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            <div className="table-container scroll-area">
               <table className="table">
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--surface)' }}>
                   <tr>
                     <th>Voluntário</th>
                     <th>Contato</th>

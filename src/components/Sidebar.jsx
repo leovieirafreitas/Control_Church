@@ -19,8 +19,8 @@ const Sidebar = () => {
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
     { name: 'Voluntários', icon: <Users size={20} />, path: '/volunteers' },
     { name: 'Departamentos', icon: <Grid size={20} />, path: '/departments' },
-    { name: 'Dízimos', icon: <DollarSign size={20} />, path: '/tithes' },
-    { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications' },
+    { name: 'Dízimos', icon: <DollarSign size={20} />, path: '/tithes', mobileHidden: true },
+    { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications', mobileHidden: true },
   ];
 
   return (
@@ -37,8 +37,9 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             end={item.path === '/'}
+            className={item.mobileHidden ? 'hide-mobile' : ''}
             style={({ isActive }) => ({
-              display: 'flex',
+              display: (item.mobileHidden && window.innerWidth < 768) ? 'none' : 'flex',
               alignItems: 'center',
               gap: '1rem',
               padding: '0.75rem 1rem',
