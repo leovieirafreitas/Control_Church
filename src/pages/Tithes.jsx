@@ -747,29 +747,35 @@ const Tithes = () => {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'transparent', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '90%', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--danger)' }}>Confirmar Exclusão</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+      {showDeleteModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ padding: '2.5rem', borderRadius: '20px', maxWidth: '420px', width: '95%', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', textAlign: 'center' }}>
+            <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <AlertCircle size={28} />
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.75rem', color: 'var(--text-dark)' }}>Confirmar Exclusão</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6', fontSize: '0.95rem' }}>
               Tem certeza que deseja excluir esta contribuição? O valor será permanentemente apagado dos relatórios.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <button
                 onClick={() => setShowDeleteModal(false)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 500 }}
+                className="btn btn-outline"
+                style={{ width: '100%', padding: '0.75rem' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: 'var(--danger)', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+                className="btn btn-danger"
+                style={{ width: '100%', padding: '0.75rem' }}
               >
                 Sim, Excluir
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* PDF Scanner Modal */}
