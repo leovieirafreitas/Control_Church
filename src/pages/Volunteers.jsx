@@ -4,11 +4,13 @@ import { useApp } from '../context/AppContext';
 import { Plus, Edit2, X, Check, Search, Trash2 } from 'lucide-react';
 
 /* ─── Modal de Novo Voluntário ─────────────────────────────── */
-const AddVolunteerModal = ({ departments, onSave, onClose }) => {
+const AddVolunteerModal = ({ onSave, onClose }) => {
+  const { departments, templates } = useApp();
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [departmentIds, setDepartmentIds] = useState([]);
   const [deptSearch, setDeptSearch] = useState('');
+  const [sendWelcome, setSendWelcome] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const handlePhoneChange = (e) => {
@@ -30,7 +32,40 @@ const AddVolunteerModal = ({ departments, onSave, onClose }) => {
       return;
     }
     setSaving(true);
+    
+    // Salva o voluntário
     await onSave({ name: name.trim(), contact, departmentIds });
+    
+    // Envia Boas-Vindas se solicitado
+    if (sendWelcome && contact) {
+      const welcomeTemplate = templates.find(t => t.id === 'welcome');
+      if (welcomeTemplate) {
+        const number = contact.replace(/\D/g, '');
+        const formattedNumber = number.startsWith('55') ? number : `55${number}`;
+        const volDepts = departmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', ');
+        
+        const message = welcomeTemplate.text
+          .replace(/{{nome}}/g, name.trim())
+          .replace(/{{departamentos}}/g, volDepts);
+
+        try {
+          await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/message/sendText/Control_Church`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619'
+            },
+            body: JSON.stringify({
+              number: formattedNumber,
+              text: message
+            })
+          });
+        } catch (error) {
+          console.error('Erro ao enviar boas-vindas:', error);
+        }
+      }
+    }
+
     setSaving(false);
     onClose();
   };
@@ -96,6 +131,12 @@ const AddVolunteerModal = ({ departments, onSave, onClose }) => {
                 </label>
               ))}
             </div>
+          </div>
+          <div style={{ padding: '0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => setSendWelcome(!sendWelcome)}>
+            <div style={{ width: '20px', height: '20px', borderRadius: '4px', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: sendWelcome ? 'var(--primary)' : 'transparent', transition: '0.2s' }}>
+              {sendWelcome && <Check size={14} color="white" />}
+            </div>
+            <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-dark)' }}>Enviar mensagem de boas-vindas via WhatsApp</span>
           </div>
         </div>
 
@@ -386,7 +427,6 @@ const Volunteers = () => {
 
       {isAddModalOpen && (
         <AddVolunteerModal
-          departments={departments}
           onSave={addVolunteer}
           onClose={() => setIsAddModalOpen(false)}
         />

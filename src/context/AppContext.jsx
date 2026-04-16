@@ -12,6 +12,41 @@ export const AppProvider = ({ children }) => {
   const [churchSettings, setChurchSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [volunteerSearch, setVolunteerSearch] = useState('');
+  const [templates, setTemplates] = useState(() => {
+    const defaultTemplates = [
+      {
+        id: 'default',
+        name: 'Lembrete de Pendência',
+        text: 'Olá {{nome}}! 🌟 \n\nNotamos que ainda não recebemos a sua contribuição referente ao mês de *{{mes}}*. \n\nSua ajuda é fundamental para mantermos os trabalhos da igreja. Se já realizou, por favor, desconsidere esta mensagem. \n\nDeus te abençoe! 🙏'
+      },
+      {
+        id: 'welcome',
+        name: 'Boas Vindas',
+        text: 'Paz do Senhor, {{nome}}! 👋\n\nÉ uma alegria ter você conosco no departamento {{departamentos}}. Que Deus te use grandemente nesta obra!\n\nSeja muito bem-vindo!'
+      },
+      {
+        id: 'tithe_receipt',
+        name: 'Comprovante de Dízimo',
+        text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição! 🙏✨'
+      }
+    ];
+
+    const saved = localStorage.getItem('message_templates');
+    if (!saved) return defaultTemplates;
+
+    const parsedSaved = JSON.parse(saved);
+    // Garante que todos os defaults existam no salvo
+    defaultTemplates.forEach(def => {
+      if (!parsedSaved.find(t => t.id === def.id)) {
+        parsedSaved.push(def);
+      }
+    });
+    return parsedSaved;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('message_templates', JSON.stringify(templates));
+  }, [templates]);
 
   // Carrega dados do Supabase ao iniciar
   useEffect(() => {
@@ -158,6 +193,8 @@ export const AppProvider = ({ children }) => {
     deleteVolunteer,
     registerTithe,
     deleteTithe,
+    templates,
+    setTemplates,
     refetch: fetchAll,
   };
 

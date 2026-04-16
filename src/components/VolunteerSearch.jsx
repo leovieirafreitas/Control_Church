@@ -102,20 +102,45 @@ const VolunteerSearch = ({
   return (
     <div className="vs-wrap" ref={containerRef}>
       {selected ? (
-        <div className="vs-selected">
-          <div className="vs-selected-avatar">
+        <div className="vs-selected" style={{ 
+          display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', 
+          border: '1px solid var(--primary)', borderRadius: '12px', background: 'white',
+          boxShadow: '0 4px 12px rgba(59,130,246,0.08)', animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div className="vs-selected-avatar" style={{
+            width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+            color: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 800, fontSize: '0.7rem', flexShrink: 0
+          }}>
             {selected.initials || getInitials(selected.name)}
           </div>
-          <div className="vs-selected-info">
-            <span className="vs-selected-name">{selected.name}</span>
+          <div className="vs-selected-info" style={{ flex: 1 }}>
+            <span className="vs-selected-name" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>{selected.name}</span>
           </div>
-          <button className="vs-clear" onClick={handleClear} type="button" title="Remover (Esc)">
-            <X size={15} />
+          <button 
+            className="vs-clear" 
+            onClick={handleClear} 
+            type="button" 
+            style={{
+              background: 'var(--bg-color)',
+              border: 'none',
+              color: 'var(--text-muted)',
+              padding: '6px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'var(--transition)'
+            }}
+          >
+            <X size={14} />
           </button>
         </div>
       ) : (
-        <div className={`vs-search-wrap ${focused ? 'vs-focused' : ''}`}>
-          <Search size={16} className="vs-search-icon" />
+        <div className={`vs-search-wrap ${focused ? 'vs-focused' : ''}`} style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 1rem',
+          border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--surface)',
+          transition: 'var(--transition)'
+        }}>
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
           <input
             ref={inputRef}
             className="vs-input"
@@ -127,22 +152,22 @@ const VolunteerSearch = ({
             onBlur={() => setFocused(false)}
             onKeyDown={handleKeyDown}
             autoComplete="off"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: '0.9rem' }}
           />
-          {query && (
-            <button className="vs-clear-search" type="button" onClick={() => setQuery('')}>
-              <X size={13} />
-            </button>
-          )}
         </div>
       )}
 
-      {/* Dropdown de resultados */}
       {open && !selected && (
-        <div className="vs-dropdown" ref={listRef}>
+        <div className="vs-dropdown" style={{
+          position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
+          background: 'white', border: '1px solid var(--border-color)', borderRadius: '14px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.12)', zIndex: 1000, maxHeight: '280px', overflowY: 'auto',
+          padding: '0.5rem', animation: 'fadeIn 0.2s ease-out'
+        }}>
           {filtered.length === 0 ? (
-            <div className="vs-empty">
-              <User size={20} style={{ opacity: 0.3 }} />
-              <span>Nenhum voluntário encontrado</span>
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <User size={24} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+              <div style={{ fontSize: '0.85rem' }}>Nenhum voluntário encontrado</div>
             </div>
           ) : (
             filtered.map((v, idx) => (
@@ -151,16 +176,28 @@ const VolunteerSearch = ({
                 className="vs-option"
                 type="button"
                 style={{
-                  background: idx === highlighted ? 'var(--primary-light)' : undefined,
+                  width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none',
+                  background: idx === highlighted ? 'var(--primary-light)' : 'transparent',
+                  display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer',
+                  transition: 'background 0.15s, transform 0.1s',
+                  transform: idx === highlighted ? 'translateX(4px)' : 'none',
+                  textAlign: 'left'
                 }}
                 onMouseEnter={() => setHighlighted(idx)}
                 onMouseDown={() => handleSelect(v)}
               >
-                <div className="vs-option-avatar">
+                <div style={{
+                  width: '34px', height: '34px', borderRadius: '8px', 
+                  background: idx === highlighted ? 'var(--primary)' : 'var(--bg-color)',
+                  color: idx === highlighted ? 'white' : 'var(--primary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, fontSize: '0.7rem', transition: 'var(--transition)'
+                }}>
                   {v.initials || getInitials(v.name)}
                 </div>
-                <div className="vs-option-info">
-                  <span className="vs-option-name">{v.name}</span>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>{v.name}</div>
+                  {v.contact && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{v.contact}</div>}
                 </div>
               </button>
             ))

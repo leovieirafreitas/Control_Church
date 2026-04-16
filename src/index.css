@@ -97,6 +97,26 @@ body {
   background-color: var(--bg-color);
 }
 
+.btn-success {
+  background-color: #16a34a;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-dark);
+  transform: translateY(-1px);
+}
+
 /* Cards */
 .card {
   background: var(--surface);

@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Volunteers from './pages/Volunteers';
 import Departments from './pages/Departments';
 import Tithes from './pages/Tithes';
+import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import PublicRegister from './pages/PublicRegister';
 import { AppProvider } from './context/AppContext';
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="volunteers" element={<Volunteers />} />
         <Route path="departments" element={<Departments />} />
         <Route path="tithes" element={<Tithes />} />
+        <Route path="notifications" element={<Notifications />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

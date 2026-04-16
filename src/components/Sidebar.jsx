@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Grid, DollarSign, LogOut, Copy } from 'lucide-react';
+import { LayoutDashboard, Users, Grid, DollarSign, LogOut, Copy, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logoImg from '../assets/logo.png';
 
@@ -20,6 +20,7 @@ const Sidebar = () => {
     { name: 'Voluntários', icon: <Users size={20} />, path: '/volunteers' },
     { name: 'Departamentos', icon: <Grid size={20} />, path: '/departments' },
     { name: 'Dízimos', icon: <DollarSign size={20} />, path: '/tithes' },
+    { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications' },
   ];
 
   return (

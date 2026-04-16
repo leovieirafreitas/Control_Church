@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { DollarSign, Download, Trash2, X, ChevronDown, CalendarX, CheckCircle, ScanLine } from 'lucide-react';
-import VolunteerSearch from '../components/VolunteerSearch';
+import VolunteerSearch from '../components/VolunteerSearch.jsx';
 import DatePicker from '../components/DatePicker';
 import PdfScanner from '../components/PdfScanner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoUrl from '../assets/logo.png';
+import { createPortal } from 'react-dom';
+import { AlertCircle, X as CloseIcon } from 'lucide-react';
 
 const Tithes = () => {
-  const { volunteers, tithes, churchSettings, departments, registerTithe, deleteTithe } = useApp();
+  const { volunteers, tithes, churchSettings, departments, registerTithe, deleteTithe, templates } = useApp();
   const getLocalDateString = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -36,6 +38,14 @@ const Tithes = () => {
   const [showScanner, setShowScanner] = useState(false);
   const dropdownRef = useRef(null);
   const amountRef = useRef(null);
+
+  // Custom Notifications States
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -189,10 +199,77 @@ const Tithes = () => {
     doc.save('relatorio_dizimos.pdf');
   };
 
+  const sendReceiptWhatsApp = async (volunteer, amount, date) => {
+    if (!volunteer.contact) {
+      showToast('Voluntário não possui contato cadastrado.', 'error');
+      return;
+    }
+
+    // Formata o número (remove caracteres não numéricos)
+    let phoneNumber = volunteer.contact.replace(/\D/g, '');
+    if (phoneNumber.length < 8) return;
+
+    // Garante o código do país (55 para Brasil)
+    if (!phoneNumber.startsWith('55')) {
+      phoneNumber = `55${phoneNumber}`;
+    }
+
+    const formattedAmount = formatCurrency(amount);
+    const formattedDate = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR');
+
+    const template = templates.find(t => t.id === 'tithe_receipt') || { 
+      text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição! 🙏✨'
+    };
+
+    const d = new Date(date + 'T12:00:00');
+    const month = d.toLocaleString('pt-BR', { month: 'long' });
+    const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+    const year = d.getFullYear().toString();
+
+    const message = template.text
+      .replace(/{{nome}}/g, volunteer.name)
+      .replace(/{{valor}}/g, formattedAmount)
+      .replace(/{{data}}/g, formattedDate)
+      .replace(/{{mes}}/g, capitalizedMonth)
+      .replace(/{{ano}}/g, year);
+
+    try {
+      const response = await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/message/sendText/Control_Church`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619'
+        },
+        body: JSON.stringify({
+          number: phoneNumber,
+          text: message
+        })
+      });
+
+      if (response.ok) {
+        showToast('Comprovante enviado via WhatsApp!', 'success');
+      } else {
+        const errData = await response.json();
+        console.error('Erro na API Evolution:', errData);
+        showToast('Erro ao enviar WhatsApp. Verifique a conexão.', 'error');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar comprovante:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.volunteerId && formData.amount && formData.date) {
+      const volunteer = volunteers.find(v => v.id === formData.volunteerId);
       await registerTithe(formData.volunteerId, formData.amount, formData.date);
+      
+      // Envia o comprovante via WhatsApp se houver contato
+      if (volunteer && volunteer.contact) {
+        sendReceiptWhatsApp(volunteer, formData.amount, formData.date);
+      }
+      
+      showToast('Dízimo registrado com sucesso!', 'success');
       setFormData({ ...formData, amount: '', volunteerId: '' });
     }
   };
@@ -704,6 +781,25 @@ const Tithes = () => {
           onRegister={registerTithe}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.visible && createPortal(
+        <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 100000, animation: 'slideInRight 0.3s ease-out' }}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: '0.75rem', 
+            padding: '1rem 1.5rem', borderRadius: '12px', background: 'white', 
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+            borderLeft: `4px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`
+          }}>
+            {toast.type === 'error' ? <AlertCircle size={20} style={{ color: '#ef4444' }} /> : <CheckCircle size={20} style={{ color: '#10b981' }} />}
+            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b' }}>{toast.message}</span>
+            <button onClick={() => setToast(prev => ({ ...prev, visible: false }))} style={{ marginLeft: '1rem', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+              <CloseIcon size={16} />
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
