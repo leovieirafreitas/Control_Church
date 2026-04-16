@@ -8,14 +8,14 @@ const Notifications = () => {
   const navigate = useNavigate();
   const { volunteers, tithes, departments, templates, setTemplates } = useApp();
   const now = new Date();
-  
+
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'mass' | 'templates'
   const [filterMonth, setFilterMonth] = useState((now.getMonth() + 1).toString());
   const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [sendingId, setSendingId] = useState(null);
   const [status, setStatus] = useState({}); // { [volId]: 'success' | 'error' }
-  
+
   // WhatsApp Connection States
   const [connectionStatus, setConnectionStatus] = useState('checking'); // 'checking' | 'open' | 'disconnected'
   const [qrCode, setQrCode] = useState(null);
@@ -78,8 +78,8 @@ const Notifications = () => {
 
   const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => ({ value: y.toString(), label: y.toString() }));
 
-  const isFutureMonth = parseInt(filterYear) > now.getFullYear() || 
-                       (parseInt(filterYear) === now.getFullYear() && parseInt(filterMonth) > now.getMonth() + 1);
+  const isFutureMonth = parseInt(filterYear) > now.getFullYear() ||
+    (parseInt(filterYear) === now.getFullYear() && parseInt(filterMonth) > now.getMonth() + 1);
 
   const pendingVolunteers = isFutureMonth ? [] : volunteers.filter(v => {
     // Filtro por nome
@@ -101,7 +101,7 @@ const Notifications = () => {
   const formatMessage = (templateText, volunteer) => {
     const monthName = months.find(m => m.value === filterMonth)?.label;
     const volDepts = volunteer.departmentIds?.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', ') || 'Nenhum';
-    
+
     return templateText
       .replace(/{{nome}}/g, volunteer.name)
       .replace(/{{mes}}/g, monthName)
@@ -113,7 +113,7 @@ const Notifications = () => {
     if (!volunteer.contact) return false;
 
     setSendingId(volunteer.id);
-    
+
     const number = volunteer.contact.replace(/\D/g, '');
     const formattedNumber = number.startsWith('55') ? number : `55${number}`;
 
@@ -183,10 +183,10 @@ const Notifications = () => {
 
     for (let i = 0; i < toSend.length; i++) {
       if (window._bulkCancelRequested) break;
-      
+
       setBulkProgress(i + 1);
       await sendNotification(toSend[i]);
-      
+
       if (i < toSend.length - 1) {
         // Aguarda o intervalo selecionado
         await new Promise(resolve => {
@@ -223,7 +223,7 @@ const Notifications = () => {
       const data = await response.json();
       const state = data.instance.state === 'open' ? 'open' : 'disconnected';
       setConnectionStatus(state);
-      
+
       if (state === 'disconnected' && showModalIfDisconnected) {
         setShowConnModal(true);
         getQRCode();
@@ -313,7 +313,7 @@ const Notifications = () => {
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {/* WhatsApp Connection Button */}
-          <button 
+          <button
             onClick={() => setShowConnModal(true)}
             className="btn btn-outline"
             style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'var(--surface)' }}
@@ -326,26 +326,26 @@ const Notifications = () => {
           <div style={{ height: '24px', width: '1px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
 
           <div style={{ display: 'flex', background: 'var(--surface)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '0' }}>
-            <button 
+            <button
               onClick={() => setActiveTab('pending')}
               style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'pending' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'pending' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
             >
               Lista
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('mass')}
               style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'mass' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'mass' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
             >
               Envio em Massa
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('templates')}
               style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'templates' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'templates' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
             >
               Modelos
             </button>
           </div>
-          
+
           {(activeTab === 'pending' || activeTab === 'mass') && (
             <>
               {/* Month Select */}
@@ -404,7 +404,7 @@ const Notifications = () => {
 
       {/* Content */}
       <div className="card" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        
+
         {activeTab === 'pending' && (
           <>
             <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', flexWrap: 'wrap', gap: '1rem' }}>
@@ -413,12 +413,12 @@ const Notifications = () => {
                   Pendentes em {months.find(m => m.value === filterMonth)?.label}
                   <span className="badge badge-blue" style={{ marginLeft: '0.75rem' }}>{pendingVolunteers.length}</span>
                 </span>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid var(--border-color)', padding: '0.4rem 0.75rem', borderRadius: '10px', background: 'var(--bg-color)' }}>
                   <Search size={16} className="text-muted" />
-                  <input 
-                    type="text" 
-                    placeholder="Pesquisar voluntário..." 
+                  <input
+                    type="text"
+                    placeholder="Pesquisar voluntário..."
                     value={searchVolunteer}
                     onChange={(e) => setSearchVolunteer(e.target.value)}
                     style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.85rem', width: '200px' }}
@@ -524,7 +524,7 @@ const Notifications = () => {
                             ) : (
                               <>
                                 <Send size={16} />
-                                Notificar via Whats
+                                Notificar
                               </>
                             )}
                           </button>
@@ -564,7 +564,7 @@ const Notifications = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
                       <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Modelo de Mensagem:</label>
-                      <button 
+                      <button
                         onClick={() => setActiveTab('templates')}
                         style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                       >
@@ -575,7 +575,7 @@ const Notifications = () => {
                     <div>
                       <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Intervalo de Envio:</label>
                       <div style={{ position: 'relative' }}>
-                        <button 
+                        <button
                           onClick={() => setDropdownOpen(dropdownOpen === 'interval' ? null : 'interval')}
                           style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                         >
@@ -585,7 +585,7 @@ const Notifications = () => {
                         {dropdownOpen === 'interval' && (
                           <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '5px', zIndex: 100, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.35rem', boxShadow: 'var(--shadow-lg)' }}>
                             {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
-                              <button 
+                              <button
                                 key={val}
                                 onClick={() => { setSendInterval(val); setDropdownOpen(null); }}
                                 style={{ width: '100%', padding: '0.5rem', textAlign: 'left', background: sendInterval === val ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: sendInterval === val ? 600 : 400, color: sendInterval === val ? 'var(--primary-dark)' : 'var(--text-dark)', cursor: 'pointer' }}
@@ -597,7 +597,7 @@ const Notifications = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     <div style={{ padding: '0.75rem', background: 'rgba(34,197,94,0.05)', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.1)' }}>
                       <p style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 500, lineHeight: 1.4 }}>
                         Intervalo recomendado para evitar bloqueios automáticos.
@@ -615,7 +615,7 @@ const Notifications = () => {
                     <div style={{ width: '100%', height: '10px', background: 'var(--bg-color)', borderRadius: '10px', overflow: 'hidden' }}>
                       <div style={{ width: `${(bulkProgress / bulkTotal) * 100}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.4s ease' }}></div>
                     </div>
-                    <button 
+                    <button
                       onClick={handleBulkCancel}
                       className="btn btn-danger"
                       style={{ marginTop: '1.5rem', width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem' }}
@@ -624,7 +624,7 @@ const Notifications = () => {
                     </button>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={startBulkSend}
                     className="btn btn-primary"
                     style={{ padding: '1rem', fontSize: '0.95rem', fontWeight: 700, gap: '0.75rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(59,130,246,0.25)' }}
@@ -640,8 +640,8 @@ const Notifications = () => {
                 <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                         checked={pendingVolunteers.filter(v => v.contact).length > 0 && selectedVolIds.length === pendingVolunteers.filter(v => v.contact).length}
                         onChange={(e) => {
@@ -662,7 +662,7 @@ const Notifications = () => {
                   {/* Search Input for Mass Sending */}
                   <div style={{ position: 'relative' }}>
                     <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input 
+                    <input
                       type="text"
                       placeholder="Pesquisar voluntário na lista..."
                       value={searchMassVolunteer}
@@ -671,32 +671,32 @@ const Notifications = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
                   {(() => {
-                    const filtered = pendingVolunteers.filter(v => 
-                      v.contact && 
+                    const filtered = pendingVolunteers.filter(v =>
+                      v.contact &&
                       v.name.toLowerCase().includes(searchMassVolunteer.toLowerCase())
                     );
-                    
+
                     if (filtered.length > 0) {
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           {filtered.map(vol => (
-                            <div 
+                            <div
                               key={vol.id}
                               onClick={() => {
                                 if (isBulkSending) return;
                                 setSelectedVolIds(prev => prev.includes(vol.id) ? prev.filter(id => id !== vol.id) : [...prev, vol.id]);
                               }}
-                              style={{ 
+                              style={{
                                 display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', borderRadius: '10px', cursor: 'pointer', transition: '0.2s',
                                 background: selectedVolIds.includes(vol.id) ? 'rgba(59,130,246,0.04)' : 'transparent',
                                 border: `1px solid ${selectedVolIds.includes(vol.id) ? 'rgba(59,130,246,0.1)' : 'transparent'}`
                               }}
                             >
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 checked={selectedVolIds.includes(vol.id)}
                                 readOnly
                                 style={{ width: '16px', height: '16px', cursor: 'pointer' }}
@@ -773,10 +773,10 @@ const Notifications = () => {
                         <h4 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{template.name}</h4>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ID: {template.id}</span>
                       </div>
-                      
+
                       <div style={{ position: 'relative' }}>
-                        <button 
-                          className="btn btn-primary" 
+                        <button
+                          className="btn btn-primary"
                           onClick={() => setDropdownOpen(dropdownOpen === 'vars' ? null : 'vars')}
                           style={{ gap: '0.5rem', padding: '0.5rem 1rem' }}
                         >
@@ -784,7 +784,7 @@ const Notifications = () => {
                           Inserir Variável
                           <ChevronDown size={14} />
                         </button>
-                        
+
                         {dropdownOpen === 'vars' && (
                           <div style={{ position: 'absolute', top: '110%', right: 0, width: '220px', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, padding: '0.5rem' }}>
                             {[
@@ -816,7 +816,7 @@ const Notifications = () => {
                     </div>
 
                     <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <textarea 
+                      <textarea
                         value={template.text}
                         onChange={(e) => updateTemplateText(template.id, e.target.value)}
                         placeholder="Escreva sua mensagem aqui..."
@@ -824,7 +824,7 @@ const Notifications = () => {
                         onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                         onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
                       />
-                      
+
                       <div style={{ background: 'var(--primary-light)', padding: '1rem', borderRadius: '12px', border: '1px dashed var(--primary)' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--primary-dark)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <CheckCircle size={14} />
@@ -845,23 +845,23 @@ const Notifications = () => {
 
       {/* Connection Modal (Pop-up) via Portal for real full-screen coverage */}
       {showConnModal && createPortal(
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.85)', 
-          backdropFilter: 'blur(10px)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 99999, 
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
           padding: '1.5rem',
           color: 'var(--text-dark)'
         }}>
           <div className="card animate-fade-in" style={{ maxWidth: '450px', width: '100%', padding: '2.5rem', textAlign: 'center', boxShadow: '0 25px 70px -12px rgba(0, 0, 0, 0.7)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', position: 'relative', background: 'white' }}>
-            <button 
+            <button
               onClick={() => {
                 if (connectionStatus === 'open') {
                   setShowConnModal(false);
@@ -884,16 +884,16 @@ const Notifications = () => {
               {connectionStatus === 'open' ? 'WhatsApp Conectado!' : 'Conecte seu WhatsApp'}
             </h3>
             <div style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.6 }}>
-              {connectionStatus === 'open' 
-                ? 'Sua conta está ativa e pronta para enviar notificações automáticas.' 
+              {connectionStatus === 'open'
+                ? 'Sua conta está ativa e pronta para enviar notificações automáticas.'
                 : 'É necessário conectar o WhatsApp da igreja para carregar as pendências e enviar as notificações automáticas.'}
             </div>
 
             <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '1.5rem', border: '1px solid #e2e8f0', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
               {connectionStatus === 'open' ? (
                 <div style={{ textAlign: 'center', padding: '1rem' }}>
-                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#16a34a', marginBottom: '0.5rem' }}>Status: Ativo</div>
-                   <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Instância: Control_Church</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#16a34a', marginBottom: '0.5rem' }}>Status: Ativo</div>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Instância: Control_Church</div>
                 </div>
               ) : qrCode ? (
                 <>
@@ -915,7 +915,7 @@ const Notifications = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {connectionStatus === 'open' ? (
-                <button 
+                <button
                   onClick={reiniciarConexao}
                   className="btn btn-danger"
                   style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700 }}
@@ -924,14 +924,14 @@ const Notifications = () => {
                 </button>
               ) : (
                 <>
-                  <button 
+                  <button
                     onClick={getQRCode}
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700 }}
                   >
                     Gerar QR Code
                   </button>
-                  <button 
+                  <button
                     onClick={reiniciarConexao}
                     className="btn btn-outline"
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, border: '1px dashed #cbd5e1' }}
@@ -951,9 +951,9 @@ const Notifications = () => {
       {/* Custom Toast Notification */}
       {toast.visible && createPortal(
         <div style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 100000, animation: 'slideInRight 0.3s ease-out' }}>
-          <div style={{ 
-            display: 'flex', alignItems: 'center', gap: '0.75rem', 
-            padding: '1rem 1.5rem', borderRadius: '12px', background: 'white', 
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+            padding: '1rem 1.5rem', borderRadius: '12px', background: 'white',
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
             borderLeft: `4px solid ${toast.type === 'error' ? '#ef4444' : toast.type === 'warning' ? '#f59e0b' : '#10b981'}`
           }}>
@@ -977,15 +977,15 @@ const Notifications = () => {
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem' }}>Confirmar Ação</h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.5 }}>{confirmModal.message}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <button 
-                className="btn btn-outline" 
+              <button
+                className="btn btn-outline"
                 onClick={() => setConfirmModal({ visible: false, message: '', onConfirm: null })}
                 style={{ padding: '0.75rem' }}
               >
                 Cancelar
               </button>
-              <button 
-                className="btn btn-primary" 
+              <button
+                className="btn btn-primary"
                 onClick={confirmModal.onConfirm}
                 style={{ padding: '0.75rem' }}
               >
