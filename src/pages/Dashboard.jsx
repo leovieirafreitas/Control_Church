@@ -38,7 +38,7 @@ const Dashboard = () => {
     { value: '12', label: 'Dezembro' },
   ];
 
-  const years = [2024, 2025, 2026, 2027, 2028, 2029, 2030]
+  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032]
     .map(y => ({ value: y.toString(), label: y.toString() }));
 
   const filteredTithes = tithes.filter(t => {
