@@ -120,11 +120,11 @@ const Notifications = () => {
     const message = formatMessage(currentTemplate.text, volunteer);
 
     try {
-      const response = await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/message/sendText/Control_Church`, {
+      const response = await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/message/sendText/Control_Church`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619'
+          'apikey': import.meta.env.VITE_EVOLUTION_API_KEY
         },
         body: JSON.stringify({
           number: formattedNumber,
@@ -217,8 +217,8 @@ const Notifications = () => {
 
   const checkConnection = async (showModalIfDisconnected = false) => {
     try {
-      const response = await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/instance/connectionState/Control_Church`, {
-        headers: { 'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619' }
+      const response = await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/instance/connectionState/Control_Church`, {
+        headers: { 'apikey': import.meta.env.VITE_EVOLUTION_API_KEY }
       });
       const data = await response.json();
       const state = data.instance.state === 'open' ? 'open' : 'disconnected';
@@ -239,8 +239,8 @@ const Notifications = () => {
     setLoadingConn(true);
     setQrCode(null);
     try {
-      const response = await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/instance/connect/Control_Church`, {
-        headers: { 'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619' }
+      const response = await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/instance/connect/Control_Church`, {
+        headers: { 'apikey': import.meta.env.VITE_EVOLUTION_API_KEY }
       });
       const data = await response.json();
       if (data.base64) {
@@ -257,9 +257,9 @@ const Notifications = () => {
     setLoadingConn(true);
     try {
       // Força o logout da instância para limpar sessões fantasmas
-      await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/instance/logout/Control_Church`, {
+      await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/instance/logout/Control_Church`, {
         method: 'DELETE',
-        headers: { 'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619' }
+        headers: { 'apikey': import.meta.env.VITE_EVOLUTION_API_KEY }
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
       await getQRCode();
@@ -276,9 +276,9 @@ const Notifications = () => {
       onConfirm: async () => {
         setConfirmModal({ visible: false, message: '', onConfirm: null });
         try {
-          await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/instance/logout/Control_Church`, {
+          await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/instance/logout/Control_Church`, {
             method: 'DELETE',
-            headers: { 'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619' }
+            headers: { 'apikey': import.meta.env.VITE_EVOLUTION_API_KEY }
           });
           setConnectionStatus('disconnected');
           setQrCode(null);

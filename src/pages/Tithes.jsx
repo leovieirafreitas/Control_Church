@@ -234,11 +234,11 @@ const Tithes = () => {
       .replace(/{{ano}}/g, year);
 
     try {
-      const response = await fetch(`https://evolution-api-evolution-api.rumjhv.easypanel.host/message/sendText/Control_Church`, {
+      const response = await fetch(`${import.meta.env.VITE_EVOLUTION_API_URL}/message/sendText/Control_Church`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': 'CDF504AA64AA-4DB2-A7B3-AC60EF159619'
+          'apikey': import.meta.env.VITE_EVOLUTION_API_KEY
         },
         body: JSON.stringify({
           number: phoneNumber,
