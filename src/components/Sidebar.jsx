@@ -19,7 +19,7 @@ const Sidebar = () => {
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
     { name: 'Voluntários', icon: <Users size={20} />, path: '/volunteers' },
     { name: 'Departamentos', icon: <Grid size={20} />, path: '/departments' },
-    { name: 'Dízimos', icon: <DollarSign size={20} />, path: '/tithes', mobileHidden: true },
+    { name: 'Contribuições', icon: <DollarSign size={20} />, path: '/tithes', mobileHidden: true },
     { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications', mobileHidden: true },
   ];
 

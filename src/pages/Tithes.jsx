@@ -152,7 +152,7 @@ const Tithes = () => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
     // Shifted text lower since logo is at top
-    doc.text('Relatório de Contribuições (Dízimos)', 14, 38);
+    doc.text('Relatório de Contribuições', 14, 38);
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
@@ -196,7 +196,7 @@ const Tithes = () => {
     doc.setFont('helvetica', 'bold');
     doc.text(`Total Contribuído: ${formatCurrency(totalAmount)}`, 14, finalY + 10);
 
-    doc.save('relatorio_dizimos.pdf');
+    doc.save('relatorio_contribuicoes.pdf');
   };
 
   const sendReceiptWhatsApp = async (volunteer, amount, date) => {
@@ -269,7 +269,7 @@ const Tithes = () => {
         sendReceiptWhatsApp(volunteer, formData.amount, formData.date);
       }
       
-      showToast('Dízimo registrado com sucesso!', 'success');
+      showToast('Contribuição registrada com sucesso!', 'success');
       setFormData({ ...formData, amount: '', volunteerId: '' });
     }
   };
@@ -281,15 +281,15 @@ const Tithes = () => {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', flexShrink: 0 }}>
         <div>
-          <h2 className="text-2xl" style={{ marginBottom: '0.1rem' }}>Dízimos</h2>
-          <p className="text-muted" style={{ fontSize: '0.82rem' }}>Registro e controle de dizimistas</p>
+          <h2 className="text-2xl" style={{ marginBottom: '0.1rem' }}>Contribuições</h2>
+          <p className="text-muted" style={{ fontSize: '0.82rem' }}>Registro e controle de contribuidores</p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <input
             type="text"
             className="form-input"
-            placeholder="Pesquisar dizimista..."
+            placeholder="Pesquisar contribuidor..."
             value={searchVolunteer}
             onChange={e => setSearchVolunteer(e.target.value)}
             style={{ width: '280px', margin: 0, padding: '0.4rem 0.75rem', fontSize: '0.855rem' }}
@@ -326,7 +326,7 @@ const Tithes = () => {
 
         {/* ── Formulário compacto ── */}
         <div className="card" style={{ padding: '1rem', alignSelf: 'start' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.875rem', color: 'var(--text-dark)' }}>Registrar Dízimo</h3>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.875rem', color: 'var(--text-dark)' }}>Registrar Contribuição</h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
 
             <div>
@@ -392,7 +392,7 @@ const Tithes = () => {
                   onClick={() => setActiveTab('history')}
                   style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'history' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'history' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
                 >
-                  Histórico de Dízimos
+                  Histórico de Contribuições
                 </button>
                 <button
                   onClick={() => setActiveTab('pending')}
@@ -686,7 +686,7 @@ const Tithes = () => {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                Nenhum dízimo registrado.
+                Nenhuma contribuição registrada.
               </div>
             )
           ) : (

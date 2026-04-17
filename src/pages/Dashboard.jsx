@@ -216,7 +216,7 @@ const Dashboard = () => {
           </div>
 
           <Link to="/tithes" className="btn btn-primary hide-mobile" style={{ flexShrink: 0 }}>
-            Registrar Dízimo
+            Registrar Contribuição
           </Link>
         </div>
       </div>
@@ -308,9 +308,9 @@ const Dashboard = () => {
       {/* ── Bottom Panels: 2 colunas ── */}
       <div className="dashboard-bottom-grid flex-area" style={{ flex: 1, minHeight: 0 }}>
 
-        {/* Dízimos Recentes */}
+        {/* Contribuições Recentes */}
         <div className="card flex-card">
-          <h3 className="text-xl mb-4" style={{ flexShrink: 0 }}>Dízimos Recentes</h3>
+          <h3 className="text-xl mb-4" style={{ flexShrink: 0 }}>Contribuições Recentes</h3>
           {recentTithes.length > 0 ? (
             <div className="table-container scroll-area">
               <table className="table">
@@ -338,15 +338,12 @@ const Dashboard = () => {
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              Nenhum dízimo registrado ainda.
+              Nenhum registro encontrado ainda.
             </div>
           )}
         </div>
 
-        {/* Dizimistas Pendentes */}
-        <div className="card flex-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
-            <h3 className="text-xl">Dizimistas Pendentes</h3>
+            <h3 className="text-xl">Contribuidores Pendentes</h3>
             <span style={{
               background: pendingCount > 0 ? '#fee2e2' : '#dcfce7',
               color: pendingCount > 0 ? '#dc2626' : '#16a34a',

@@ -26,7 +26,7 @@ export const AppProvider = ({ children }) => {
       },
       {
         id: 'tithe_receipt',
-        name: 'Comprovante de Dízimo',
+        name: 'Comprovante de Contribuição',
         text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição! 🙏✨'
       }
     ];
@@ -141,7 +141,7 @@ export const AppProvider = ({ children }) => {
     return { error };
   };
 
-  // ── Dízimos ────────────────────────────────────────────────────
+  // ── Contribuições ────────────────────────────────────────────────────
   const registerTithe = async (volunteerId, amount, date) => {
     const { data, error } = await supabase
       .from('tithes')

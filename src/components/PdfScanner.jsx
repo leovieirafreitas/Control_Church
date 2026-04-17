@@ -368,7 +368,7 @@ const PdfScanner = ({ volunteers, tithes, churchSettings, onRegister, onClose })
 
               {/* Formulário de Registro */}
               <div style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--surface)' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-dark)', marginBottom: '1rem' }}>Confirmar Dados do Dízimo</h4>
+                <h4 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-dark)', marginBottom: '1rem' }}>Confirmar Dados da Contribuição</h4>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Data do Pagamento</label>

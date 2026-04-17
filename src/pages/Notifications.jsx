@@ -793,8 +793,8 @@ const Notifications = () => {
                               { label: 'Ano de Referência', var: '{{ano}}' },
                               { label: 'Departamentos', var: '{{departamentos}}' },
                               ...(template.id === 'tithe_receipt' ? [
-                                { label: 'Valor do Dízimo', var: '{{valor}}' },
-                                { label: 'Data do Dízimo', var: '{{data}}' }
+                                { label: 'Valor da Contribuição', var: '{{valor}}' },
+                                { label: 'Data da Contribuição', var: '{{data}}' }
                               ] : [])
                             ].map(v => (
                               <button
