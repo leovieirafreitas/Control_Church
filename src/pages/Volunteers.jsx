@@ -99,7 +99,7 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
                   const dep = departments.find(d => d.id === id);
                   if (!dep) return null;
                   return (
-                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       {dep.name}
                       <button type="button" onClick={() => toggleDept(id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-dark)', display: 'flex', padding: 0 }}><X size={12} /></button>
                     </span>
@@ -234,7 +234,7 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
                   const dep = departments.find(d => d.id === id);
                   if (!dep) return null;
                   return (
-                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       {dep.name}
                       <button
                         type="button"

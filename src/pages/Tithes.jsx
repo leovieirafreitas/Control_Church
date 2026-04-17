@@ -656,7 +656,7 @@ const Tithes = () => {
                                 {volunteer?.departmentIds?.map(id => {
                                   const dept = departments?.find(d => d.id === id);
                                   return dept ? (
-                                    <span key={id} style={{ fontSize: '0.65rem', fontWeight: 600, background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.1rem 0.4rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                    <span key={id} className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>
                                       {dept.name}
                                     </span>
                                   ) : null;
@@ -710,7 +710,7 @@ const Tithes = () => {
                               {vol.departmentIds?.map(id => {
                                 const dept = departments?.find(d => d.id === id);
                                 return dept ? (
-                                  <span key={id} style={{ fontSize: '0.65rem', fontWeight: 600, background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.1rem 0.4rem', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                  <span key={id} className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.6rem', whiteSpace: 'nowrap' }}>
                                     {dept.name}
                                   </span>
                                 ) : null;
