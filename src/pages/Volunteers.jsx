@@ -310,12 +310,27 @@ const Volunteers = () => {
   const { volunteers, addVolunteer, updateVolunteer, deleteVolunteer, departments, volunteerSearch, setVolunteerSearch } = useApp();
   const [editingVolunteer, setEditingVolunteer] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [volunteerToDelete, setVolunteerToDelete] = useState(null);
 
   const filteredVolunteers = React.useMemo(() => {
     return [...volunteers]
       .filter(v => v.name.toLowerCase().includes(volunteerSearch.toLowerCase()))
       .sort((a, b) => a.name.trim().localeCompare(b.name.trim(), 'pt-BR', { sensitivity: 'base' }));
   }, [volunteers, volunteerSearch]);
+
+  const handleDeleteClick = (vol) => {
+    setVolunteerToDelete(vol);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (volunteerToDelete) {
+      await deleteVolunteer(volunteerToDelete.id);
+      setShowDeleteModal(false);
+      setVolunteerToDelete(null);
+    }
+  };
 
   return (
     <div className="animate-fade-in flex-container">
@@ -385,11 +400,7 @@ const Volunteers = () => {
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Tem certeza que deseja excluir o voluntário ${vol.name}?`)) {
-                              deleteVolunteer(vol.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteClick(vol)}
                           style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s', display: 'flex', alignItems: 'center' }}
                           onMouseOver={e => e.currentTarget.style.color = 'var(--danger)'}
                           onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
@@ -426,6 +437,38 @@ const Volunteers = () => {
           onSave={updateVolunteer}
           onClose={() => setEditingVolunteer(null)}
         />
+      )}
+
+      {/* Modal de confirmação de exclusão */}
+      {showDeleteModal && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out' }}>
+          <div className="card" style={{ padding: '2.5rem', borderRadius: '20px', maxWidth: '420px', width: '95%', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', textAlign: 'center' }}>
+            <div style={{ background: '#fee2e2', color: 'var(--danger)', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Trash2 size={28} />
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.75rem', color: 'var(--text-dark)' }}>Excluir Voluntário</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6', fontSize: '0.95rem' }}>
+              Tem certeza que deseja excluir o voluntário <strong style={{ color: 'var(--text-dark)' }}>{volunteerToDelete?.name}</strong>? Esta ação não poderá ser desfeita.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <button
+                onClick={() => { setShowDeleteModal(false); setVolunteerToDelete(null); }}
+                className="btn btn-outline"
+                style={{ width: '100%', padding: '0.75rem' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="btn btn-danger"
+                style={{ width: '100%', padding: '0.75rem' }}
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
