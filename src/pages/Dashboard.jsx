@@ -343,6 +343,9 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* Contribuidores Pendentes */}
+        <div className="card flex-card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
             <h3 className="text-xl">Contribuidores Pendentes</h3>
             <span style={{
               background: pendingCount > 0 ? '#fee2e2' : '#dcfce7',
