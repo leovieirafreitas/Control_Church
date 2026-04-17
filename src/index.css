@@ -215,6 +215,11 @@ body {
   color: var(--primary-dark);
 }
 
+.badge-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
 /* Layout */
 .layout {
   display: flex;

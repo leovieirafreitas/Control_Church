@@ -719,7 +719,7 @@ const Tithes = () => {
                           </div>
                         </td>
                         <td>{vol.contact || '-'}</td>
-                        <td><span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>Pendente</span></td>
+                        <td><span className="badge badge-red">Pendente</span></td>
                       </tr>
                     ))}
                   </tbody>
