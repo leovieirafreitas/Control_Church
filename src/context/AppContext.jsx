@@ -20,6 +20,11 @@ export const AppProvider = ({ children }) => {
         text: 'Olá {{nome}}! 🌟 \n\nNotamos que ainda não recebemos a sua contribuição referente ao mês de *{{mes}}*. \n\nSua ajuda é fundamental para mantermos os trabalhos da igreja. Se já realizou, por favor, desconsidere esta mensagem. \n\nDeus te abençoe! 🙏'
       },
       {
+        id: 'custom_message',
+        name: 'Mensagem Elaborada',
+        text: 'Olá {{nome}}! 🙏\n\nEscreva aqui sua mensagem elaborada para os voluntários do departamento {{departamentos}}.\n\nVocê pode usar as variáveis disponíveis para personalizar o texto conforme necessário.\n\nDeus te abençoe!'
+      },
+      {
         id: 'welcome',
         name: 'Boas Vindas',
         text: 'Paz do Senhor, {{nome}}! 👋\n\nÉ uma alegria ter você conosco no departamento {{departamentos}}. Que Deus te use grandemente nesta obra!\n\nSeja muito bem-vindo!'

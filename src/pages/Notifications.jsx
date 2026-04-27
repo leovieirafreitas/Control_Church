@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Bell, Send, CheckCircle, AlertCircle, Loader2, Calendar, ChevronDown, Search, X } from 'lucide-react';
+
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bulk-notify`;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -22,14 +25,16 @@ const Notifications = () => {
   const [loadingConn, setLoadingConn] = useState(false);
   const [showConnModal, setShowConnModal] = useState(false);
 
-  // Bulk Send States
+  // Bulk Send States (agora via Edge Function)
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkTotal, setBulkTotal] = useState(0);
-  const [bulkCancel, setBulkCancel] = useState(false);
+  const [bulkFailed, setBulkFailed] = useState(0);
   const [selectedVolIds, setSelectedVolIds] = useState([]);
   const [searchMassVolunteer, setSearchMassVolunteer] = useState('');
   const [sendInterval, setSendInterval] = useState(5); // Segundos entre mensagens
+  const [currentJobId, setCurrentJobId] = useState(null);
+  const pollingRef = useRef(null);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('default');
   const [searchVolunteer, setSearchVolunteer] = useState('');
@@ -45,15 +50,7 @@ const Notifications = () => {
     }
   };
 
-  // Garante que o modelo selecionado para notificações manuais seja válido (não pode ser comprovante nem boas-vindas)
-  // Mas permite selecionar qualquer um se estiver na aba de "Modelos" (para edição)
-  React.useEffect(() => {
-    if (activeTab !== 'templates') {
-      if (selectedTemplateId === 'tithe_receipt' || selectedTemplateId === 'welcome') {
-        setSelectedTemplateId('default');
-      }
-    }
-  }, [selectedTemplateId, activeTab]);
+
 
   const updateTemplateText = (id, newText) => {
     setTemplates(prev => prev.map(t => t.id === id ? { ...t, text: newText } : t));
@@ -166,7 +163,7 @@ const Notifications = () => {
 
     setConfirmModal({
       visible: true,
-      message: `Deseja iniciar o envio em massa para ${toSend.length} voluntários com intervalo de ${sendInterval} segundos?`,
+      message: `Deseja iniciar o envio em massa para ${toSend.length} voluntários via servidor? O envio continuará mesmo se você fechar o navegador.`,
       onConfirm: async () => {
         setConfirmModal({ visible: false, message: '', onConfirm: null });
         await executeBulkSend(toSend);
@@ -178,41 +175,98 @@ const Notifications = () => {
     setIsBulkSending(true);
     setBulkTotal(toSend.length);
     setBulkProgress(0);
-    setBulkCancel(false);
-    window._bulkCancelRequested = false;
+    setBulkFailed(0);
 
-    for (let i = 0; i < toSend.length; i++) {
-      if (window._bulkCancelRequested) break;
+    try {
+      // Pré-formata a mensagem de cada voluntário no frontend (com {{mes}}, {{ano}}, {{departamentos}}, etc.)
+      const volunteersPayload = toSend.map(v => ({
+        id: v.id,
+        name: v.name,
+        contact: v.contact,
+        message: formatMessage(currentTemplate.text, v), // mensagem completamente formatada
+      }));
 
-      setBulkProgress(i + 1);
-      await sendNotification(toSend[i]);
+      // Dispara o job na edge function
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          volunteers: volunteersPayload,
+          filterMonth,
+          filterYear,
+          sendInterval,
+        })
+      });
 
-      if (i < toSend.length - 1) {
-        // Aguarda o intervalo selecionado
-        await new Promise(resolve => {
-          const timeoutId = setTimeout(resolve, sendInterval * 1000);
-          const checkInterval = setInterval(() => {
-            if (window._bulkCancelRequested) {
-              clearTimeout(timeoutId);
-              clearInterval(checkInterval);
-              resolve();
-            }
-          }, 100);
-        });
+      const data = await response.json();
+
+      if (!response.ok || !data.jobId) {
+        throw new Error(data.error || 'Falha ao iniciar o job de envio');
       }
-      if (window._bulkCancelRequested) break;
-    }
 
-    setIsBulkSending(false);
-    setSendingId(null);
-    setSelectedVolIds([]);
-    window._bulkCancelRequested = false;
-    showToast('Processo de envio em massa finalizado!', 'success');
+      setCurrentJobId(data.jobId);
+      showToast(`Job iniciado no servidor! ID: ${data.jobId.slice(0, 8)}...`, 'success');
+
+      // Inicia polling do progresso
+      startPolling(data.jobId);
+
+    } catch (err) {
+      console.error('Erro ao iniciar envio em massa:', err);
+      showToast(`Erro: ${err.message}`, 'error');
+      setIsBulkSending(false);
+    }
   };
 
-  const handleBulkCancel = () => {
-    setBulkCancel(true);
-    window._bulkCancelRequested = true;
+  const startPolling = (jobId) => {
+    // Limpa polling anterior se existir
+    if (pollingRef.current) clearInterval(pollingRef.current);
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${EDGE_FUNCTION_URL}?jobId=${jobId}`, {
+          headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        const job = await res.json();
+
+        setBulkProgress(job.sent + job.failed);
+        setBulkFailed(job.failed);
+        setBulkTotal(job.total);
+
+        if (job.status === 'completed' || job.status === 'cancelled' || job.status === 'error') {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          setIsBulkSending(false);
+          setCurrentJobId(null);
+          setSelectedVolIds([]);
+
+          if (job.status === 'completed') {
+            showToast(`Envio concluído! ✅ ${job.sent} enviados, ❌ ${job.failed} falhas.`, 'success');
+          } else if (job.status === 'cancelled') {
+            showToast('Envio cancelado pelo usuário.', 'error');
+          } else {
+            showToast('Erro no processo de envio.', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('Erro no polling:', err);
+      }
+    }, 3000); // Verifica a cada 3 segundos
+  };
+
+  const handleBulkCancel = async () => {
+    if (!currentJobId) return;
+    try {
+      await fetch(`${EDGE_FUNCTION_URL}?jobId=${currentJobId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      showToast('Solicitação de cancelamento enviada...', 'success');
+    } catch (err) {
+      showToast('Erro ao cancelar.', 'error');
+    }
   };
 
   const checkConnection = async (showModalIfDisconnected = false) => {
@@ -564,13 +618,30 @@ const Notifications = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
                       <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Modelo de Mensagem:</label>
-                      <button
-                        onClick={() => setActiveTab('templates')}
-                        style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                      >
-                        {currentTemplate.name}
-                        <ChevronDown size={14} />
-                      </button>
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => setDropdownOpen(dropdownOpen === 'mass-template' ? null : 'mass-template')}
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', background: dropdownOpen === 'mass-template' ? 'var(--primary-light)' : 'var(--bg-color)', border: `1.5px solid ${dropdownOpen === 'mass-template' ? 'var(--primary)' : 'var(--border-color)'}`, borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', color: dropdownOpen === 'mass-template' ? 'var(--primary-dark)' : 'var(--text-dark)', transition: 'all 0.2s' }}
+                        >
+                          {currentTemplate.name}
+                          <ChevronDown size={14} style={{ transform: dropdownOpen === 'mass-template' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                        </button>
+                        {dropdownOpen === 'mass-template' && (
+                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '5px', zIndex: 200, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.35rem', boxShadow: 'var(--shadow-lg)' }}>
+                            {templates.map(t => (
+                              <button
+                                key={t.id}
+                                onClick={() => { setSelectedTemplateId(t.id); setDropdownOpen(null); }}
+                                style={{ width: '100%', padding: '0.6rem 0.75rem', textAlign: 'left', background: selectedTemplateId === t.id ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: selectedTemplateId === t.id ? 700 : 400, color: selectedTemplateId === t.id ? 'var(--primary-dark)' : 'var(--text-dark)', cursor: 'pointer', transition: '0.15s' }}
+                                onMouseOver={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'var(--bg-color)'; }}
+                                onMouseOut={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'transparent'; }}
+                              >
+                                {t.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Intervalo de Envio:</label>
@@ -608,19 +679,34 @@ const Notifications = () => {
 
                 {isBulkSending ? (
                   <div style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--surface)', border: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                    {/* Badge: rodando no servidor */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', padding: '0.5rem 0.75rem', background: 'rgba(59,130,246,0.06)', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.15)' }}>
+                      <Loader2 size={14} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-dark)' }}>Rodando no servidor — pode fechar o navegador</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>
                       <span>Progresso</span>
-                      <span>{bulkProgress} de {bulkTotal}</span>
+                      <span>{bulkProgress} / {bulkTotal}</span>
                     </div>
                     <div style={{ width: '100%', height: '10px', background: 'var(--bg-color)', borderRadius: '10px', overflow: 'hidden' }}>
-                      <div style={{ width: `${(bulkProgress / bulkTotal) * 100}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.4s ease' }}></div>
+                      <div style={{ width: `${bulkTotal > 0 ? (bulkProgress / bulkTotal) * 100 : 0}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.6s ease' }}></div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+                      <div style={{ flex: 1, padding: '0.5rem', background: 'rgba(34,197,94,0.06)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(34,197,94,0.15)' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#16a34a' }}>{bulkProgress - bulkFailed}</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>ENVIADOS</div>
+                      </div>
+                      <div style={{ flex: 1, padding: '0.5rem', background: 'rgba(239,68,68,0.06)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(239,68,68,0.15)' }}>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{bulkFailed}</div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>FALHAS</div>
+                      </div>
                     </div>
                     <button
                       onClick={handleBulkCancel}
                       className="btn btn-danger"
-                      style={{ marginTop: '1.5rem', width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem' }}
+                      style={{ marginTop: '1.25rem', width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem' }}
                     >
-                      <X size={16} /> Cancelar Envio
+                      <X size={16} /> Solicitar Cancelamento
                     </button>
                   </div>
                 ) : (
