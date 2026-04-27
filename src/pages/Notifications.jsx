@@ -602,7 +602,7 @@ const Notifications = () => {
           <div style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflow: 'hidden' }}>
             <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
               {/* Settings and Stats */}
-              <div style={{ width: '350px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ width: '350px', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
                 <div style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--surface)', textAlign: 'center' }}>
                   <div style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
                     <Send size={32} />
