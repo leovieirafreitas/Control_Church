@@ -38,6 +38,7 @@ const Notifications = () => {
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('default');
   const [searchVolunteer, setSearchVolunteer] = useState('');
+  const [targetAudience, setTargetAudience] = useState('pending'); // 'pending' | 'paid'
 
   // Custom Notifications States
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
@@ -79,8 +80,8 @@ const Notifications = () => {
     (parseInt(filterYear) === now.getFullYear() && parseInt(filterMonth) > now.getMonth() + 1);
 
   const pendingVolunteers = isFutureMonth ? [] : volunteers.filter(v => {
-    // Filtro por nome
-    if (searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
+    // Filtro por nome apenas se estiver na aba de Lista
+    if (activeTab === 'pending' && searchVolunteer.trim() !== '' && !v.name.toLowerCase().includes(searchVolunteer.toLowerCase())) {
       return false;
     }
 
@@ -92,6 +93,12 @@ const Notifications = () => {
         (d.getMonth() + 1).toString() === filterMonth
       );
     });
+    
+    if (activeTab === 'mass') {
+      if (targetAudience === 'all') return true;
+      return targetAudience === 'pending' ? !hasTithed : hasTithed;
+    }
+    
     return !hasTithed;
   });
 
@@ -99,11 +106,31 @@ const Notifications = () => {
     const monthName = months.find(m => m.value === filterMonth)?.label;
     const volDepts = volunteer.departmentIds?.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', ') || 'Nenhum';
 
-    return templateText
+    let message = templateText
       .replace(/{{nome}}/g, volunteer.name)
       .replace(/{{mes}}/g, monthName)
       .replace(/{{ano}}/g, filterYear)
       .replace(/{{departamentos}}/g, volDepts);
+
+    if (message.includes('{{valor}}') || message.includes('{{data}}')) {
+      const volTithes = tithes.filter(t => {
+        const d = new Date(t.date + 'T12:00:00');
+        return (
+          t.volunteerId === volunteer.id &&
+          d.getFullYear().toString() === filterYear &&
+          (d.getMonth() + 1).toString() === filterMonth
+        );
+      });
+      const totalAmount = volTithes.reduce((acc, curr) => acc + Number(curr.amount), 0);
+      const formattedAmount = totalAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      
+      const sortedTithes = [...volTithes].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const lastDate = sortedTithes.length > 0 ? new Date(sortedTithes[0].date + 'T12:00:00').toLocaleDateString('pt-BR') : '-';
+
+      message = message.replace(/{{valor}}/g, formattedAmount).replace(/{{data}}/g, lastDate);
+    }
+
+    return message;
   };
 
   const sendNotification = async (volunteer) => {
@@ -617,6 +644,24 @@ const Notifications = () => {
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Configuração:</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Público-alvo:</label>
+                      <div style={{ position: 'relative' }}>
+                        <select
+                          value={targetAudience}
+                          onChange={(e) => {
+                            setTargetAudience(e.target.value);
+                            setSelectedVolIds([]); // Limpa a seleção ao mudar o filtro
+                          }}
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, outline: 'none', cursor: 'pointer', color: 'var(--text-dark)' }}
+                        >
+                          <option value="pending">Voluntários Pendentes</option>
+                          <option value="paid">Dizimistas (Já Contribuíram)</option>
+                          <option value="all">Todos os Voluntários</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
                       <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Modelo de Mensagem:</label>
                       <div style={{ position: 'relative' }}>
                         <button
@@ -878,10 +923,8 @@ const Notifications = () => {
                               { label: 'Mês de Referência', var: '{{mes}}' },
                               { label: 'Ano de Referência', var: '{{ano}}' },
                               { label: 'Departamentos', var: '{{departamentos}}' },
-                              ...(template.id === 'tithe_receipt' ? [
-                                { label: 'Valor da Contribuição', var: '{{valor}}' },
-                                { label: 'Data da Contribuição', var: '{{data}}' }
-                              ] : [])
+                              { label: 'Valor da Contribuição', var: '{{valor}}' },
+                              { label: 'Data da Contribuição', var: '{{data}}' }
                             ].map(v => (
                               <button
                                 key={v.var}

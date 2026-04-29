@@ -33,6 +33,11 @@ export const AppProvider = ({ children }) => {
         id: 'tithe_receipt',
         name: 'Comprovante de Contribuição',
         text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição! 🙏✨'
+      },
+      {
+        id: 'monthly_thanks',
+        name: 'Agradecimento Mensal (Dizimistas)',
+        text: 'Olá, {{nome}}! Queremos agradecer de coração pela sua fidelidade e amor à obra de Deus no mês de *{{mes}}*. Suas contribuições totalizaram *{{valor}}*. Que o Senhor continue abençoando poderosamente a sua vida e de toda sua família! 🙏✨'
       }
     ];
 
