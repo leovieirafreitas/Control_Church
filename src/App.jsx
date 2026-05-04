@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import PublicRegister from './pages/PublicRegister';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ChurchProvider } from './context/ChurchContext';
 
 // Guard: redireciona para /login se não autenticado
 const PrivateRoute = ({ children }) => {
@@ -43,9 +44,11 @@ function AppRoutes() {
         path="/"
         element={
           <PrivateRoute>
-            <AppProvider>
-              <Layout />
-            </AppProvider>
+            <ChurchProvider>
+              <AppProvider>
+                <Layout />
+              </AppProvider>
+            </ChurchProvider>
           </PrivateRoute>
         }
       >

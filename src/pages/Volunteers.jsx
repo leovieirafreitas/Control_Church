@@ -8,6 +8,9 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
   const { departments, templates } = useApp();
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [email, setEmail] = useState('');
   const [departmentIds, setDepartmentIds] = useState([]);
   const [deptSearch, setDeptSearch] = useState('');
   const [sendWelcome, setSendWelcome] = useState(true);
@@ -19,6 +22,14 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
     if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
     if (v.length > 10) v = `${v.substring(0, 10)}-${v.substring(10)}`;
     setContact(v);
+  };
+
+  const handleCpfChange = (e) => {
+    let v = e.target.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 9) v = `${v.substring(0,3)}.${v.substring(3,6)}.${v.substring(6,9)}-${v.substring(9)}`;
+    else if (v.length > 6) v = `${v.substring(0,3)}.${v.substring(3,6)}.${v.substring(6)}`;
+    else if (v.length > 3) v = `${v.substring(0,3)}.${v.substring(3)}`;
+    setCpf(v);
   };
 
   const toggleDept = (id) => {
@@ -34,7 +45,7 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
     setSaving(true);
 
     // Salva o voluntário
-    await onSave({ name: name.trim(), contact, departmentIds });
+    await onSave({ name: name.trim(), contact, departmentIds, birthDate, cpf, email });
 
     // Envia Boas-Vindas se solicitado
     if (sendWelcome && contact) {
@@ -90,6 +101,25 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Contato (Telefone/WhatsApp)</label>
             <input type="text" className="form-input" value={contact} onChange={handlePhoneChange} placeholder="(00) 00000-0000" />
+          </div>
+
+          {/* Seção Perfil Futuro */}
+          <div style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '1rem', border: '1px dashed var(--border-color)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Dados para perfil (opcional)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>Data de Nascimento</label>
+                <input type="date" className="form-input" value={birthDate} onChange={e => setBirthDate(e.target.value)} style={{ fontSize: '0.875rem' }} />
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>CPF</label>
+                <input type="text" className="form-input" value={cpf} onChange={handleCpfChange} placeholder="000.000.000-00" />
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>E-mail</label>
+                <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+              </div>
+            </div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Departamentos <span style={{ color: 'red' }}>*</span></label>
@@ -148,6 +178,9 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
 const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
   const [name, setName] = useState(volunteer.name);
   const [contact, setContact] = useState(volunteer.contact ?? '');
+  const [birthDate, setBirthDate] = useState(volunteer.birthDate ?? '');
+  const [cpf, setCpf] = useState(volunteer.cpf ?? '');
+  const [email, setEmail] = useState(volunteer.email ?? '');
   const [departmentIds, setDepartmentIds] = useState(volunteer.departmentIds ?? []);
   const [deptSearch, setDeptSearch] = useState('');
   const [saving, setSaving] = useState(false);
@@ -158,6 +191,14 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
     if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
     if (v.length > 10) v = `${v.substring(0, 10)}-${v.substring(10)}`;
     setContact(v);
+  };
+
+  const handleCpfChange = (e) => {
+    let v = e.target.value.replace(/\D/g, '').substring(0, 11);
+    if (v.length > 9) v = `${v.substring(0,3)}.${v.substring(3,6)}.${v.substring(6,9)}-${v.substring(9)}`;
+    else if (v.length > 6) v = `${v.substring(0,3)}.${v.substring(3,6)}.${v.substring(6)}`;
+    else if (v.length > 3) v = `${v.substring(0,3)}.${v.substring(3)}`;
+    setCpf(v);
   };
 
   const toggleDept = (id) => {
@@ -172,7 +213,7 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
       return;
     }
     setSaving(true);
-    await onSave(volunteer.id, { name: name.trim(), contact, departmentIds });
+    await onSave(volunteer.id, { name: name.trim(), contact, departmentIds, birthDate, cpf, email });
     setSaving(false);
     onClose();
   };
@@ -219,6 +260,25 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
             />
+          </div>
+
+          {/* Seção Perfil Futuro */}
+          <div style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '1rem', border: '1px dashed var(--border-color)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Dados para perfil (opcional)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>Data de Nascimento</label>
+                <input type="date" className="form-input" value={birthDate} onChange={e => setBirthDate(e.target.value)} style={{ fontSize: '0.875rem' }} />
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>CPF</label>
+                <input type="text" className="form-input" value={cpf} onChange={handleCpfChange} placeholder="000.000.000-00" />
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: '0.8rem' }}>E-mail</label>
+                <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+              </div>
+            </div>
           </div>
 
           {/* Departamentos */}

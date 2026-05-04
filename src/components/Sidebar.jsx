@@ -1,12 +1,27 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Grid, DollarSign, LogOut, Copy, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Grid, DollarSign, LogOut, Copy, Bell, ChevronDown, Check, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useChurch } from '../context/ChurchContext';
 import logoImg from '../assets/logo.png';
 
 const Sidebar = () => {
   const { signOut, user } = useAuth();
-  const [copied, setCopied] = React.useState(false);
+  const { churches, activeChurch, switchChurch } = useChurch();
+  const [copied, setCopied] = useState(false);
+  const [churchDropdownOpen, setChurchDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setChurchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleCopyLink = () => {
     const registerUrl = `${window.location.origin}/register`;
@@ -23,15 +38,141 @@ const Sidebar = () => {
     { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications', mobileHidden: true },
   ];
 
+  // Abreviação do nome da igreja para exibição compacta
+  const shortName = activeChurch?.name?.replace('Chama Church - ', '') ?? '—';
+
   return (
     <aside className="sidebar">
       {/* Logo */}
-      <div className="flex items-center gap-2 mb-8" style={{ padding: '0.5rem' }}>
+      <div className="flex items-center gap-2 mb-6" style={{ padding: '0.5rem' }}>
         <img src={logoImg} alt="ChamaChurch Logo" style={{ maxWidth: '100%', height: '28px', objectFit: 'contain', marginLeft: '-0.5rem' }} />
       </div>
 
-      {/* Nav */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+      {/* ── Church Selector ────────────────────────────── */}
+      <div ref={dropdownRef} style={{ marginBottom: '1.5rem', position: 'relative' }}>
+        {/* Label */}
+        <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem', paddingLeft: '0.25rem' }}>
+
+        </div>
+
+        {/* Trigger */}
+        <button
+          onClick={() => setChurchDropdownOpen(prev => !prev)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            padding: '0.6rem 0.75rem',
+            borderRadius: '10px',
+            border: '1px solid var(--border-color)',
+            background: churchDropdownOpen ? 'var(--primary-light)' : 'var(--sidebar-bg, #fff)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          }}
+          onMouseEnter={e => { if (!churchDropdownOpen) e.currentTarget.style.borderColor = 'var(--primary)'; }}
+          onMouseLeave={e => { if (!churchDropdownOpen) e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+        >
+          {/* Ícone de Igreja */}
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Building2 size={16} color="white" />
+          </div>
+
+          {/* Nome */}
+          <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {shortName}
+            </div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+              Igreja ativa
+            </div>
+          </div>
+
+          {/* Chevron */}
+          <ChevronDown
+            size={16}
+            color="var(--text-muted)"
+            style={{ flexShrink: 0, transition: 'transform 0.2s ease', transform: churchDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </button>
+
+        {/* Dropdown */}
+        {churchDropdownOpen && (
+          <div style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            right: 0,
+            background: 'var(--card-bg, #fff)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+            zIndex: 1000,
+            overflow: 'hidden',
+            animation: 'fadeInDown 0.15s ease',
+          }}>
+            {/* Header do dropdown */}
+            <div style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                Selecionar unidade
+              </div>
+            </div>
+
+            {/* Lista de igrejas */}
+            {churches.map(church => {
+              const isSelected = church.id === activeChurch?.id;
+              const name = church.name.replace('Chama Church - ', '');
+              return (
+                <button
+                  key={church.id}
+                  onClick={() => { switchChurch(church); setChurchDropdownOpen(false); }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    padding: '0.65rem 0.75rem',
+                    border: 'none',
+                    background: isSelected ? 'var(--primary-light)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s ease',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-color)'; }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {/* Dot indicador */}
+                  <div style={{
+                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                    background: isSelected ? 'var(--primary)' : 'var(--border-color)',
+                    transition: 'background 0.2s',
+                  }} />
+
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--primary-dark)' : 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {name}
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                      {church.city} · {church.network_name}
+                    </div>
+                  </div>
+
+                  {isSelected && <Check size={15} color="var(--primary)" style={{ flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Nav ────────────────────────────────────────── */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
         {menuItems.map((item) => (
           <NavLink
             key={item.path}
@@ -57,7 +198,7 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Link de Cadastro Público */}
+      {/* ── Link de Cadastro Público ───────────────────── */}
       <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
         <button
           onClick={handleCopyLink}
@@ -65,7 +206,7 @@ const Sidebar = () => {
           style={{
             display: 'flex', alignItems: 'center', gap: '0.75rem',
             width: '100%', padding: '0.75rem 1rem', borderRadius: '8px',
-            border: '1px dashed var(--primary)', background: copied ? 'var(--primary-light)' : 'transparent', 
+            border: '1px dashed var(--primary)', background: copied ? 'var(--primary-light)' : 'transparent',
             color: 'var(--primary-dark)', cursor: 'pointer',
             fontSize: '0.875rem', fontWeight: 500,
             transition: 'var(--transition)'
@@ -76,7 +217,7 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* Usuário + Logout */}
+      {/* ── Usuário + Logout ──────────────────────────── */}
       <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '1rem' }}>
         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', padding: '0 0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {user?.email}

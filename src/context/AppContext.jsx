@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useChurch } from './ChurchContext';
 
 const AppContext = createContext();
 
 export const useApp = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
+  const { activeChurch } = useChurch();
+
   const [departments, setDepartments] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
   const [tithes, setTithes] = useState([]);
@@ -35,9 +38,14 @@ export const AppProvider = ({ children }) => {
         text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição! 🙏✨'
       },
       {
+        id: 'complete_registration',
+        name: 'Finalizar Cadastro',
+        text: 'Ola {{nome}}!\n\nVoce esta cadastrado como voluntario da *Chama Church*! Para acessar sua area exclusiva e completar seu perfil, acesse o link abaixo:\n\n{{link_cadastro}}\n\nLa voce podera criar sua senha e visualizar seu historico de contribuicoes.\n\nQualquer duvida, estamos a disposicao!\n*Equipe Chama Church*'
+      },
+      {
         id: 'monthly_thanks',
         name: 'Agradecimento Mensal (Dizimistas)',
-        text: 'Olá, {{nome}}! Queremos agradecer de coração pela sua fidelidade e amor à obra de Deus no mês de *{{mes}}*. Suas contribuições totalizaram *{{valor}}*. Que o Senhor continue abençoando poderosamente a sua vida e de toda sua família! 🙏✨'
+        text: 'Ola, {{nome}}! Queremos agradecer de coracao pela sua fidelidade e amor a obra de Deus no mes de *{{mes}}*. Suas contribuicoes totalizaram *{{valor}}*. Que o Senhor continue abencoando poderosamente a sua vida e de toda sua familia!'
       }
     ];
 
@@ -45,35 +53,37 @@ export const AppProvider = ({ children }) => {
     if (!saved) return defaultTemplates;
 
     const parsedSaved = JSON.parse(saved);
-    // Garante que todos os defaults existam no salvo
-    defaultTemplates.forEach(def => {
-      if (!parsedSaved.find(t => t.id === def.id)) {
-        parsedSaved.push(def);
-      }
-    });
-    return parsedSaved;
+    // Sempre atualiza nome e texto dos templates padrão a partir do código
+    // (evita que valores antigos do localStorage fiquem desatualizados)
+    const defaultIds = defaultTemplates.map(d => d.id);
+    const merged = parsedSaved
+      .filter(t => !defaultIds.includes(t.id)) // mantém só os customizados
+      .concat(defaultTemplates);               // adiciona todos os padrões atualizados
+    return merged;
   });
 
   useEffect(() => {
     localStorage.setItem('message_templates', JSON.stringify(templates));
   }, [templates]);
 
-  // Carrega dados do Supabase ao iniciar
+  // Re-busca dados quando a igreja ativa mudar
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (activeChurch?.id) {
+      fetchAll(activeChurch.id);
+    }
+  }, [activeChurch?.id]);
 
-  const fetchAll = async () => {
+  const fetchAll = async (churchId) => {
     setLoading(true);
     const [depts, vols, tiths, settings] = await Promise.all([
-      supabase.from('departments').select('*').order('name'),
-      supabase.from('volunteers').select('*').order('name'),
-      supabase.from('tithes').select('*').order('date', { ascending: false }),
-      supabase.from('church_settings').select('*').limit(1).single(),
+      supabase.from('departments').select('*').eq('church_id', churchId).order('name'),
+      supabase.from('volunteers').select('*').eq('church_id', churchId).order('name'),
+      supabase.from('tithes').select('*').eq('church_id', churchId).order('date', { ascending: false }),
+      supabase.from('church_settings').select('*').eq('church_id', churchId).limit(1).single(),
     ]);
-    if (depts.data)    setDepartments(depts.data);
-    if (vols.data)     setVolunteers(vols.data);
-    if (tiths.data)    setTithes(tiths.data);
+    if (depts.data) setDepartments(depts.data);
+    if (vols.data) setVolunteers(vols.data);
+    if (tiths.data) setTithes(tiths.data);
     if (settings.data) setChurchSettings(settings.data);
     setLoading(false);
   };
@@ -93,7 +103,7 @@ export const AppProvider = ({ children }) => {
   const addDepartment = async (name) => {
     const { data, error } = await supabase
       .from('departments')
-      .insert({ name })
+      .insert({ name, church_id: activeChurch?.id })
       .select()
       .single();
     if (!error && data) setDepartments(prev => [...prev, data]);
@@ -112,6 +122,10 @@ export const AppProvider = ({ children }) => {
         contact: volunteerData.contact,
         department_ids: volunteerData.departmentIds ?? [],
         initials: initials.toUpperCase(),
+        church_id: activeChurch?.id,
+        birth_date: volunteerData.birthDate || null,
+        cpf: volunteerData.cpf || null,
+        email: volunteerData.email || null,
       })
       .select()
       .single();
@@ -130,6 +144,9 @@ export const AppProvider = ({ children }) => {
         contact: volunteerData.contact,
         department_ids: volunteerData.departmentIds ?? [],
         initials: initials.toUpperCase(),
+        birth_date: volunteerData.birthDate || null,
+        cpf: volunteerData.cpf || null,
+        email: volunteerData.email || null,
       })
       .eq('id', id)
       .select()
@@ -159,6 +176,7 @@ export const AppProvider = ({ children }) => {
         volunteer_id: volunteerId,
         amount: parseFloat(amount),
         date,
+        church_id: activeChurch?.id,
       })
       .select()
       .single();
@@ -180,6 +198,9 @@ export const AppProvider = ({ children }) => {
     ...v,
     departmentIds: v.department_ids ?? [],
     createdAt: v.created_at,
+    birthDate: v.birth_date,
+    cpf: v.cpf,
+    email: v.email,
   }));
 
   const tithesNormalized = tithes.map(t => ({
@@ -205,7 +226,7 @@ export const AppProvider = ({ children }) => {
     deleteTithe,
     templates,
     setTemplates,
-    refetch: fetchAll,
+    refetch: () => fetchAll(activeChurch?.id),
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
