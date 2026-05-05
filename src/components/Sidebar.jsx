@@ -30,9 +30,27 @@ const Sidebar = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const [openSubmenus, setOpenSubmenus] = useState(['membresia']); // Começa aberto por padrão
+
+  const toggleSubmenu = (id) => {
+    setOpenSubmenus(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { name: 'Voluntários', icon: <Users size={20} />, path: '/volunteers' },
+    { 
+      id: 'membresia',
+      name: 'Membresia', 
+      icon: <Users size={20} />, 
+      children: [
+        { name: 'Voluntários', path: '/volunteers' },
+        { name: 'Membros', path: '/members' },
+        { name: 'Visitantes', path: '/visitors' },
+        { name: 'Líderes', path: '/leaders' },
+      ]
+    },
     { name: 'Departamentos', icon: <Grid size={20} />, path: '/departments' },
     { name: 'Contribuições', icon: <DollarSign size={20} />, path: '/tithes', mobileHidden: true },
     { name: 'Notificações', icon: <Bell size={20} />, path: '/notifications', mobileHidden: true },
@@ -50,12 +68,6 @@ const Sidebar = () => {
 
       {/* ── Church Selector ────────────────────────────── */}
       <div ref={dropdownRef} style={{ marginBottom: '1.5rem', position: 'relative' }}>
-        {/* Label */}
-        <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem', paddingLeft: '0.25rem' }}>
-
-        </div>
-
-        {/* Trigger */}
         <button
           onClick={() => setChurchDropdownOpen(prev => !prev)}
           style={{
@@ -74,7 +86,6 @@ const Sidebar = () => {
           onMouseEnter={e => { if (!churchDropdownOpen) e.currentTarget.style.borderColor = 'var(--primary)'; }}
           onMouseLeave={e => { if (!churchDropdownOpen) e.currentTarget.style.borderColor = 'var(--border-color)'; }}
         >
-          {/* Ícone de Igreja */}
           <div style={{
             width: '32px', height: '32px', borderRadius: '8px',
             background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
@@ -84,7 +95,6 @@ const Sidebar = () => {
             <Building2 size={16} color="white" />
           </div>
 
-          {/* Nome */}
           <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {shortName}
@@ -94,7 +104,6 @@ const Sidebar = () => {
             </div>
           </div>
 
-          {/* Chevron */}
           <ChevronDown
             size={16}
             color="var(--text-muted)"
@@ -102,29 +111,19 @@ const Sidebar = () => {
           />
         </button>
 
-        {/* Dropdown */}
         {churchDropdownOpen && (
           <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            background: 'var(--card-bg, #fff)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-            zIndex: 1000,
-            overflow: 'hidden',
-            animation: 'fadeInDown 0.15s ease',
+            position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+            background: 'var(--card-bg, #fff)', border: '1px solid var(--border-color)',
+            borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+            zIndex: 1000, overflow: 'hidden', animation: 'fadeInDown 0.15s ease',
           }}>
-            {/* Header do dropdown */}
             <div style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 Selecionar unidade
               </div>
             </div>
 
-            {/* Lista de igrejas */}
             {churches.map(church => {
               const isSelected = church.id === activeChurch?.id;
               const name = church.name.replace('Chama Church - ', '');
@@ -133,27 +132,18 @@ const Sidebar = () => {
                   key={church.id}
                   onClick={() => { switchChurch(church); setChurchDropdownOpen(false); }}
                   style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    padding: '0.65rem 0.75rem',
-                    border: 'none',
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem',
+                    padding: '0.65rem 0.75rem', border: 'none',
                     background: isSelected ? 'var(--primary-light)' : 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s ease',
-                    textAlign: 'left',
+                    cursor: 'pointer', transition: 'background 0.15s ease', textAlign: 'left',
                   }}
                   onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-color)'; }}
                   onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  {/* Dot indicador */}
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
                     background: isSelected ? 'var(--primary)' : 'var(--border-color)',
-                    transition: 'background 0.2s',
                   }} />
-
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--primary-dark)' : 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {name}
@@ -162,8 +152,7 @@ const Sidebar = () => {
                       {church.city} · {church.network_name}
                     </div>
                   </div>
-
-                  {isSelected && <Check size={15} color="var(--primary)" style={{ flexShrink: 0 }} />}
+                  {isSelected && <Check size={15} color="var(--primary)" />}
                 </button>
               );
             })}
@@ -173,29 +162,77 @@ const Sidebar = () => {
 
       {/* ── Nav ────────────────────────────────────────── */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={item.mobileHidden ? 'hide-mobile' : ''}
-            style={({ isActive }) => ({
-              display: (item.mobileHidden && window.innerWidth < 768) ? 'none' : 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: isActive ? 'var(--primary-dark)' : 'var(--text-muted)',
-              backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
-              fontWeight: isActive ? '600' : '500',
-              transition: 'var(--transition)'
-            })}
-          >
-            {item.icon}
-            {item.name}
-          </NavLink>
-        ))}
+        {menuItems.map((item) => {
+          if (item.children) {
+            const isOpen = openSubmenus.includes(item.id);
+            return (
+              <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <button
+                  onClick={() => toggleSubmenu(item.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '1rem',
+                    padding: '0.75rem 1rem', borderRadius: '8px', border: 'none',
+                    background: 'transparent', color: 'var(--text-muted)',
+                    fontFamily: 'inherit',
+                    fontSize: '1rem',
+                    fontWeight: '500', cursor: 'pointer',
+                    transition: 'var(--transition)', width: '100%', textAlign: 'left'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-color)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {item.icon}
+                  {item.name}
+                  <div style={{ flex: 1 }} />
+                  <ChevronDown size={14} style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+                </button>
+                
+                {isOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', paddingLeft: '1.5rem' }}>
+                    {item.children.map(child => (
+                      <NavLink
+                        key={child.path}
+                        to={child.path}
+                        style={({ isActive }) => ({
+                          display: 'flex', alignItems: 'center', gap: '0.75rem',
+                          padding: '0.6rem 1rem', borderRadius: '8px',
+                          textDecoration: 'none', fontSize: '0.85rem',
+                          color: isActive ? 'var(--primary-dark)' : 'var(--text-muted)',
+                          backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
+                          fontWeight: isActive ? '700' : '500',
+                          transition: 'var(--transition)'
+                        })}
+                      >
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor', opacity: 0.5 }} />
+                        {child.name}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              className={item.mobileHidden ? 'hide-mobile' : ''}
+              style={({ isActive }) => ({
+                display: (item.mobileHidden && window.innerWidth < 768) ? 'none' : 'flex',
+                alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem',
+                borderRadius: '8px', textDecoration: 'none',
+                color: isActive ? 'var(--primary-dark)' : 'var(--text-muted)',
+                backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
+                fontWeight: isActive ? '600' : '500', transition: 'var(--transition)'
+              })}
+            >
+              {item.icon}
+              {item.name}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* ── Link de Cadastro Público ───────────────────── */}

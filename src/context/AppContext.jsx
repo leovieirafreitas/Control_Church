@@ -11,10 +11,15 @@ export const AppProvider = ({ children }) => {
 
   const [departments, setDepartments] = useState([]);
   const [volunteers, setVolunteers] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [visitors, setVisitors] = useState([]);
+  const [leaders, setLeaders] = useState([]);
   const [tithes, setTithes] = useState([]);
   const [churchSettings, setChurchSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [volunteerSearch, setVolunteerSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [visitorSearch, setVisitorSearch] = useState('');
   const [templates, setTemplates] = useState(() => {
     const defaultTemplates = [
       {
@@ -75,14 +80,20 @@ export const AppProvider = ({ children }) => {
 
   const fetchAll = async (churchId) => {
     setLoading(true);
-    const [depts, vols, tiths, settings] = await Promise.all([
+    const [depts, vols, mems, vists, leadrs, tiths, settings] = await Promise.all([
       supabase.from('departments').select('*').eq('church_id', churchId).order('name'),
       supabase.from('volunteers').select('*').eq('church_id', churchId).order('name'),
+      supabase.from('members').select('*').eq('church_id', churchId).order('name'),
+      supabase.from('visitors').select('*').eq('church_id', churchId).order('name'),
+      supabase.from('leaders').select('*').eq('church_id', churchId).order('name'),
       supabase.from('tithes').select('*').eq('church_id', churchId).order('date', { ascending: false }),
       supabase.from('church_settings').select('*').eq('church_id', churchId).limit(1).single(),
     ]);
     if (depts.data) setDepartments(depts.data);
     if (vols.data) setVolunteers(vols.data);
+    if (mems.data) setMembers(mems.data);
+    if (vists.data) setVisitors(vists.data);
+    if (leadrs.data) setLeaders(leadrs.data);
     if (tiths.data) setTithes(tiths.data);
     if (settings.data) setChurchSettings(settings.data);
     setLoading(false);
@@ -168,6 +179,136 @@ export const AppProvider = ({ children }) => {
     return { error };
   };
 
+  // ── Membros / Visitantes ──────────────────────────────────────
+  const addMember = async (memberData) => {
+    const { data, error } = await supabase
+      .from('members')
+      .insert({
+        ...memberData,
+        church_id: activeChurch?.id
+      })
+      .select()
+      .single();
+    if (!error && data) setMembers(prev => [...prev, data]);
+    return { error, data };
+  };
+
+  const updateMember = async (id, memberData) => {
+    const { data, error } = await supabase
+      .from('members')
+      .update(memberData)
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && data) {
+      setMembers(prev => prev.map(m => m.id === id ? data : m));
+    }
+    return { error, data };
+  };
+
+  const deleteMember = async (id) => {
+    const { error } = await supabase
+      .from('members')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      setMembers(prev => prev.filter(m => m.id !== id));
+    }
+    return { error };
+  };
+
+  // ── Visitantes ────────────────────────────────────────────────
+  const addVisitor = async (data) => {
+    const { data: created, error } = await supabase
+      .from('visitors')
+      .insert({ ...data, church_id: activeChurch?.id })
+      .select()
+      .single();
+    if (!error && created) setVisitors(prev => [...prev, created]);
+    return { error, data: created };
+  };
+
+  const updateVisitor = async (id, data) => {
+    const { data: updated, error } = await supabase
+      .from('visitors')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && updated) {
+      setVisitors(prev => prev.map(v => v.id === id ? updated : v));
+    }
+    return { error, data: updated };
+  };
+
+  const deleteVisitor = async (id) => {
+    const { error } = await supabase
+      .from('visitors')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      setVisitors(prev => prev.filter(v => v.id !== id));
+    }
+    return { error };
+  };
+
+  const promoteVisitorToMember = async (visitor) => {
+    const { data: member, error: insertError } = await supabase
+      .from('members')
+      .insert({
+        name: visitor.name,
+        phone: visitor.phone,
+        birth_date: visitor.birthDate,
+        neighborhood: visitor.neighborhood,
+        church_id: visitor.church_id,
+        registration_type: 'member'
+      })
+      .select()
+      .single();
+
+    if (!insertError && member) {
+      await deleteVisitor(visitor.id);
+      setMembers(prev => [...prev, member]);
+      return { success: true };
+    }
+    return { error: insertError };
+  };
+
+  // ── Líderes ───────────────────────────────────────────────────
+  const addLeader = async (data) => {
+    const { data: created, error } = await supabase
+      .from('leaders')
+      .insert({ ...data, church_id: activeChurch?.id })
+      .select()
+      .single();
+    if (!error && created) setLeaders(prev => [...prev, created]);
+    return { error, data: created };
+  };
+
+  const updateLeader = async (id, data) => {
+    const { data: updated, error } = await supabase
+      .from('leaders')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    if (!error && updated) {
+      setLeaders(prev => prev.map(l => l.id === id ? updated : l));
+    }
+    return { error, data: updated };
+  };
+
+  const deleteLeader = async (id) => {
+    const { error } = await supabase
+      .from('leaders')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      setLeaders(prev => prev.filter(l => l.id !== id));
+    }
+    return { error };
+  };
+
   // ── Contribuições ────────────────────────────────────────────────────
   const registerTithe = async (volunteerId, amount, date) => {
     const { data, error } = await supabase
@@ -203,6 +344,20 @@ export const AppProvider = ({ children }) => {
     email: v.email,
   }));
 
+  const membersNormalized = members.map(m => ({
+    ...m,
+    birthDate: m.birth_date,
+    registrationType: m.registration_type,
+    createdAt: m.created_at,
+  }));
+
+  const visitorsNormalized = visitors.map(v => ({
+    ...v,
+    birthDate: v.birth_date,
+    registrationType: v.registration_type,
+    createdAt: v.created_at,
+  }));
+
   const tithesNormalized = tithes.map(t => ({
     ...t,
     volunteerId: t.volunteer_id,
@@ -212,16 +367,33 @@ export const AppProvider = ({ children }) => {
   const value = {
     departments,
     volunteers: volunteersNormalized,
+    members: membersNormalized,
+    visitors: visitorsNormalized,
     tithes: tithesNormalized,
     churchSettings,
     updateChurchSettings,
     loading,
     volunteerSearch,
     setVolunteerSearch,
+    memberSearch,
+    setMemberSearch,
+    visitorSearch,
+    setVisitorSearch,
     addDepartment,
     addVolunteer,
     updateVolunteer,
     deleteVolunteer,
+    addMember,
+    updateMember,
+    deleteMember,
+    addVisitor,
+    updateVisitor,
+    deleteVisitor,
+    promoteVisitorToMember,
+    leaders,
+    addLeader,
+    updateLeader,
+    deleteLeader,
     registerTithe,
     deleteTithe,
     templates,

@@ -8,6 +8,9 @@ import Tithes from './pages/Tithes';
 import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import PublicRegister from './pages/PublicRegister';
+import Members from './pages/Members';
+import Visitors from './pages/Visitors';
+import Leaders from './pages/Leaders';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ChurchProvider } from './context/ChurchContext';
@@ -54,6 +57,9 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="volunteers" element={<Volunteers />} />
+        <Route path="members" element={<Members />} />
+        <Route path="visitors" element={<Visitors />} />
+        <Route path="leaders" element={<Leaders />} />
         <Route path="departments" element={<Departments />} />
         <Route path="tithes" element={<Tithes />} />
         <Route path="notifications" element={<Notifications />} />
