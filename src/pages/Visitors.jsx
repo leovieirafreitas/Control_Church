@@ -1,0 +1,494 @@
+import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
+import { useApp } from '../context/AppContext';
+import { Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import DatePicker from '../components/DatePicker';
+import Dropdown from '../components/Dropdown';
+import { MessageSquare } from 'lucide-react';
+import { MANAUS_NEIGHBORHOODS_TO_ZONES } from '../utils/manausMapping';
+
+/* ─── Modal de Edição de Visitante ────────────────────────── */
+const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
+  const [form, setForm] = useState({
+    name: visitor.name,
+    phone: visitor.phone ?? '',
+    neighborhood: visitor.neighborhood ?? '',
+    assigned_leader_id: visitor.assigned_leader_id ?? null
+  });
+
+  const registrationOptions = [
+    { value: 'visitor', label: 'Visitante' },
+    { value: 'register', label: 'Inscrição' }
+  ];
+  const [saving, setSaving] = useState(false);
+
+  const handlePhoneChange = (e) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.substring(0, 11);
+    if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+    if (v.length > 10) v = `${v.substring(0, 10)}-${v.substring(10)}`;
+    setForm(p => ({ ...p, phone: v }));
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true);
+    try {
+      const res = await onSave(visitor.id, form);
+      if (res.error) {
+        console.error("Erro ao salvar:", res.error);
+        alert("Erro ao salvar: " + res.error.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro interno: " + err.message);
+    }
+    setSaving(false);
+    onClose();
+  };
+
+  return ReactDOM.createPortal(
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="animate-scale-up" style={{ 
+        maxWidth: '450px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+      }}>
+        <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Editar Visitante</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+            <X size={20} color="var(--text-muted)" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
+            <input 
+              type="text" 
+              style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              value={form.name} 
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} 
+              required 
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Telefone / WhatsApp</label>
+            <div style={{ position: 'relative' }}>
+              <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+                onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                value={form.phone} 
+                onChange={handlePhoneChange} 
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Bairro</label>
+            <div style={{ position: 'relative' }}>
+              <MapPin size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+                onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                value={form.neighborhood} 
+                onChange={e => setForm(p => ({ ...p, neighborhood: e.target.value }))} 
+              />
+            </div>
+          </div>
+
+          <div>
+            <Dropdown
+              label="Coordenador Responsável"
+              value={form.assigned_leader_id}
+              valueLabel={leaders.find(l => l.id === form.assigned_leader_id)?.name}
+              options={leaders.map(l => ({ value: l.id, label: l.name }))}
+              onSelect={opt => setForm(p => ({ ...p, assigned_leader_id: opt.value }))}
+              placeholder="Selecione um coordenador..."
+              icon={Shield}
+            />
+          </div>
+
+          {form.assigned_leader_id && (
+            <button
+              type="button"
+              style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#e8f9ef', color: '#128c7e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: '0.2s', fontSize: '0.9rem', marginTop: '0.5rem' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'} onMouseLeave={e => e.currentTarget.style.background = '#e8f9ef'}
+              onClick={() => {
+                const leader = leaders.find(l => l.id === form.assigned_leader_id);
+                if (!leader || !leader.phone) {
+                  alert('Coordenador sem telefone cadastrado.');
+                  return;
+                }
+                const msg = encodeURIComponent(`Olá ${leader.name}!\n\nTemos um novo visitante sob sua responsabilidade:\n\nNome: *${form.name}*\nTelefone: ${form.phone}\nBairro: ${form.neighborhood}\n\nPor favor, faça o primeiro contato e dê as boas-vindas!`);
+                window.open(`https://wa.me/55${leader.phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+              }}
+            >
+              <MessageSquare size={18} /> Notificar Coordenador via WhatsApp
+            </button>
+          )}
+        </form>
+
+        <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e=>e.currentTarget.style.background='var(--primary-dark)'} onMouseLeave={e=>e.currentTarget.style.background='var(--primary)'}>
+            {saving ? 'Salvando...' : <><Save size={18} /> Salvar Alterações</>}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+/* ─── Página Principal ─────────────────────────────────────── */
+const Visitors = () => {
+  const { visitors, leaders, updateVisitor, deleteVisitor, promoteVisitorToMember, visitorSearch, setVisitorSearch, loading } = useApp();
+  const [editingVisitor, setEditingVisitor] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [visitorToDelete, setVisitorToDelete] = useState(null);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [visitorToPromote, setVisitorToPromote] = useState(null);
+
+  const [showWaitingListOnly, setShowWaitingListOnly] = useState(false);
+  const [filterCoordinator, setFilterCoordinator] = useState('all');
+  const [filterZone, setFilterZone] = useState('all');
+  const [filterDate, setFilterDate] = useState('');
+
+  const filteredVisitors = React.useMemo(() => {
+    return visitors
+      .filter(v => {
+        const matchesSearch = v.name.toLowerCase().includes(visitorSearch.toLowerCase());
+        const isWaiting = !v.assigned_leader_id;
+        
+        let matchesWaitlist = true;
+        if (showWaitingListOnly) matchesWaitlist = isWaiting;
+
+        let matchesCoordinator = true;
+        if (filterCoordinator !== 'all') {
+          matchesCoordinator = v.assigned_leader_id === filterCoordinator;
+        }
+
+        let matchesZone = true;
+        if (filterZone !== 'all') {
+          const zone = MANAUS_NEIGHBORHOODS_TO_ZONES[v.neighborhood] || 'Outros';
+          matchesZone = zone === filterZone;
+        }
+
+        let matchesDate = true;
+        if (filterDate) {
+          const visitorDate = new Date(v.createdAt).toISOString().split('T')[0];
+          matchesDate = visitorDate === filterDate;
+        }
+
+        return matchesSearch && matchesWaitlist && matchesCoordinator && matchesZone && matchesDate;
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // Mais recentes primeiro
+  }, [visitors, visitorSearch, showWaitingListOnly, filterCoordinator, filterZone, filterDate]);
+
+  const handleDeleteClick = (v) => {
+    setVisitorToDelete(v);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (visitorToDelete) {
+      await deleteVisitor(visitorToDelete.id);
+      setShowDeleteModal(false);
+      setVisitorToDelete(null);
+    }
+  };
+
+  const handlePromoteClick = (v) => {
+    setVisitorToPromote(v);
+    setShowPromoteModal(true);
+  };
+
+  const confirmPromote = async () => {
+    if (visitorToPromote) {
+      await promoteVisitorToMember(visitorToPromote);
+      setShowPromoteModal(false);
+      setVisitorToPromote(null);
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center text-muted">Carregando visitantes...</div>;
+
+  return (
+    <div className="animate-fade-in flex-container">
+      <div className="mb-6 flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl flex items-center gap-2">
+            <UserPlus size={28} className="text-purple-600" />
+            Visitantes / Inscrições
+          </h2>
+          <p className="text-muted">Acompanhe novos visitantes e pessoas interessadas</p>
+        </div>
+
+        <div style={{ width: '220px' }}>
+          <DatePicker 
+            value={filterDate}
+            onChange={setFilterDate}
+            placeholder="Filtrar por data"
+          />
+        </div>
+      </div>
+
+      <div className="card flex-card">
+        <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
+          <h3 className="text-xl">Novas Inscrições ({filteredVisitors.length})</h3>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+            {/* Fila de Espera */}
+            <button 
+              onClick={() => setShowWaitingListOnly(!showWaitingListOnly)}
+              style={{ 
+                padding: '0.6rem 1rem', 
+                borderRadius: '12px',
+                border: showWaitingListOnly ? '2px solid #ef4444' : '2px solid #e2e8f0',
+                background: showWaitingListOnly ? '#fee2e2' : 'white',
+                color: showWaitingListOnly ? '#dc2626' : 'var(--text-muted)',
+                fontWeight: '700',
+                fontSize: '0.85rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                transition: '0.2s'
+              }}
+            >
+              <AlertCircle size={16} />
+              {showWaitingListOnly ? 'Na Fila' : 'Fila de Espera'}
+              {visitors.filter(v => !v.assigned_leader_id).length > 0 && (
+                <span style={{ 
+                  background: showWaitingListOnly ? '#dc2626' : '#94a3b8', 
+                  color: 'white', 
+                  padding: '2px 6px', 
+                  borderRadius: '6px', 
+                  fontSize: '0.7rem' 
+                }}>
+                  {visitors.filter(v => !v.assigned_leader_id).length}
+                </span>
+              )}
+            </button>
+
+            {/* Zonas */}
+            <div style={{ minWidth: '160px' }}>
+              <Dropdown
+                value={filterZone}
+                valueLabel={filterZone === 'all' ? 'Todas as Zonas' : filterZone}
+                options={[
+                  { value: 'all', label: 'Todas as Zonas' },
+                  { value: 'Zona Norte', label: 'Zona Norte' },
+                  { value: 'Zona Leste', label: 'Zona Leste' },
+                  { value: 'Zona Sul', label: 'Zona Sul' },
+                  { value: 'Zona Centro-Sul', label: 'Zona Centro-Sul' },
+                  { value: 'Zona Centro-Oeste', label: 'Zona Centro-Oeste' },
+                  { value: 'Zona Oeste', label: 'Zona Oeste' },
+                  { value: 'Zona Rural', label: 'Zona Rural' },
+                  { value: 'Outros', label: 'Outros' }
+                ]}
+                onSelect={opt => setFilterZone(opt.value)}
+              />
+            </div>
+            
+            {/* Coordenadores */}
+            <div style={{ minWidth: '200px' }}>
+              <Dropdown
+                value={filterCoordinator}
+                valueLabel={filterCoordinator === 'all' ? 'Todos Coordenadores' : (leaders.find(l => l.id === filterCoordinator)?.name || 'Desconhecido')}
+                options={[
+                  { value: 'all', label: 'Todos Coordenadores' },
+                  ...leaders.map(l => ({ value: l.id, label: l.name }))
+                ]}
+                onSelect={opt => setFilterCoordinator(opt.value)}
+              />
+            </div>
+
+            {/* Pesquisa */}
+            <div style={{ position: 'relative', maxWidth: '280px', width: '100%' }}>
+              <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Pesquisar visitante..."
+                value={visitorSearch}
+                onChange={(e) => setVisitorSearch(e.target.value)}
+                style={{ width: '100%', paddingLeft: '2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', padding: '0.6rem 1rem 0.6rem 2.5rem', outline: 'none' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {filteredVisitors.length > 0 ? (
+          <div className="scroll-area">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Contato</th>
+                  <th>Bairro</th>
+                  <th>Coordenador Responsável</th>
+                  <th>Data Registro</th>
+                  <th style={{ width: '120px' }}>Feedback</th>
+                  <th style={{ width: '150px' }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVisitors.map((v) => (
+                  <tr key={v.id}>
+                    <td className="font-bold">{v.name}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-muted" />
+                        {v.phone || '—'}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <MapPin size={14} className="text-muted" />
+                        {v.neighborhood || '—'}
+                      </div>
+                    </td>
+                    <td>
+                      {v.assigned_leader_id ? (
+                        <div className="flex items-center gap-2">
+                          <Shield size={14} className="text-blue-500" />
+                          <span className="font-medium">
+                            {leaders.find(l => l.id === v.assigned_leader_id)?.name || 'Coordenador removido'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '0.4rem', 
+                          padding: '0.25rem 0.6rem', 
+                          background: 'var(--primary-light)', 
+                          color: 'var(--primary)', 
+                          borderRadius: '8px', 
+                          fontSize: '0.75rem', 
+                          fontWeight: '700',
+                          border: '1px solid var(--border-color)'
+                        }}>
+                          <AlertCircle size={12} /> Fila de Espera
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2 text-sm text-muted">
+                        {new Date(v.createdAt).toLocaleDateString('pt-BR')}
+                      </div>
+                    </td>
+                    <td>
+                      {v.followup_status === 'confirmed' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#ecfdf5', color: '#059669', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', border: '1px solid #d1fae5', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                          <CheckCircle size={12} /> Confirmado
+                        </div>
+                      )}
+                      {v.followup_status === 'denied' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', border: '1px solid #fee2e2', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                          <AlertCircle size={12} /> Sem Contato
+                        </div>
+                      )}
+                      {(!v.followup_status || v.followup_status === 'pending') && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#f8fafc', color: '#64748b', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                          <Clock size={12} /> Pendente
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex gap-3 items-center">
+                        <button 
+                          onClick={() => handlePromoteClick(v)} 
+                          className="btn-action-text" 
+                          title="Promover a Membro"
+                        >
+                          <ArrowRight size={14} /> Membro
+                        </button>
+                        <button onClick={() => setEditingVisitor(v)} className="btn-icon" title="Editar">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteClick(v)} className="btn-icon danger" title="Excluir">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-12 text-center text-muted">
+            {visitorSearch ? 'Nenhum visitante encontrado para esta busca.' : 'Nenhum visitante cadastrado no momento.'}
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Edição */}
+      {editingVisitor && (
+        <EditVisitorModal 
+          visitor={editingVisitor} 
+          leaders={leaders}
+          onSave={updateVisitor} 
+          onClose={() => setEditingVisitor(null)} 
+        />
+      )}
+
+      {/* Modal de Exclusão */}
+      {showDeleteModal && ReactDOM.createPortal(
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-up" style={{
+            maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <Trash2 size={32} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Excluir Visitante</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                Deseja realmente excluir <strong style={{color: 'var(--text-dark)'}}>{visitorToDelete?.name}</strong>? Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
+              <button onClick={confirmDelete} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#ef4444', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='#dc2626'} onMouseLeave={e=>e.currentTarget.style.background='#ef4444'}>Excluir</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal de Promoção */}
+      {showPromoteModal && ReactDOM.createPortal(
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-up" style={{
+            maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <UserPlus size={32} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Tornar Membro</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                Deseja promover <strong style={{color: 'var(--text-dark)'}}>{visitorToPromote?.name}</strong> a Membro oficial da igreja?
+              </p>
+            </div>
+            <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowPromoteModal(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
+              <button onClick={confirmPromote} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#4f46e5', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='#4338ca'} onMouseLeave={e=>e.currentTarget.style.background='#4f46e5'}>Promover</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+export default Visitors;
