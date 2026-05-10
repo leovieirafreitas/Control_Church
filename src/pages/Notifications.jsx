@@ -1200,44 +1200,57 @@ const Notifications = ({ defaultTab = 'pending' }) => {
           color: 'var(--text-dark)'
         }}>
           <div className="card animate-fade-in" style={{ 
-            maxWidth: '450px', 
+            maxWidth: '650px', 
             width: '95%', 
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            padding: '2rem 1.5rem', 
-            textAlign: 'center', 
+            padding: '1.5rem', 
+            textAlign: 'left', 
             boxShadow: '0 25px 70px -12px rgba(0, 0, 0, 0.5)', 
             borderRadius: '24px', 
             border: '1px solid rgba(0,0,0,0.05)', 
             position: 'relative', 
-            background: 'white' 
+            background: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem'
           }}>
             <button
               onClick={() => setShowConnModal(false)}
               className="btn-close"
-              style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10, padding: '0.5rem', borderRadius: '50%', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ 
+                position: 'absolute', 
+                top: '0.75rem', 
+                right: '0.75rem', 
+                zIndex: 100, 
+                padding: '0.5rem', 
+                borderRadius: '50%', 
+                background: 'rgba(0,0,0,0.05)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
             >
-              <X size={20} color="var(--text-muted)" />
+              <X size={18} color="var(--text-muted)" />
             </button>
 
-            <div style={{ background: connectionStatus === 'open' ? '#f0fdf4' : '#f0f9ff', color: connectionStatus === 'open' ? '#16a34a' : '#0369a1', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.75rem' }}>
-              {connectionStatus === 'open' ? <CheckCircle size={35} /> : <Send size={35} />}
-            </div>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap', marginTop: '1.5rem' }}>
+              {/* Coluna Esquerda: Info e Inputs */}
+              <div style={{ flex: '1.2', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Send size={20} />
+                    </div>
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>WhatsApp</h2>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: '1.4' }}>
+                    Conecte a instância da igreja para automatizar notificações e carregar pendências.
+                  </p>
+                </div>
 
-            <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.75rem', color: '#1e293b' }}>
-              {connectionStatus === 'open' ? 'WhatsApp Conectado!' : 'Conecte seu WhatsApp'}
-            </h3>
-            <div style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.6 }}>
-              {connectionStatus === 'open'
-                ? 'Sua conta está ativa e pronta para enviar notificações automáticas.'
-                : 'É necessário conectar o WhatsApp da igreja para carregar as pendências e enviar as notificações automáticas.'}
-            </div>
-
-            <div style={{ background: '#f8fafc', borderRadius: '20px', padding: '1.5rem', border: '1px solid #e2e8f0', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
-              {connectionStatus !== 'open' && (
-                <div style={{ width: '100%', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ padding: '1rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>Instância da Igreja:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>Nome da Instância:</label>
                     <input 
                       type="text"
                       value={evolutionInstance}
@@ -1246,75 +1259,71 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                       style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
                     />
                   </div>
-                  
-                  <div style={{ padding: '1rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
-                    <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>API Key (Opcional):</label>
+                  <div>
+                    <label style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>API Key (Opcional):</label>
                     <input 
                       type="password"
                       value={evolutionApiKey}
                       onChange={(e) => setEvolutionApiKey(e.target.value)}
-                      placeholder="Chave da instância ou Global"
+                      placeholder="Chave do servidor"
                       style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
                     />
-                    <p style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.4rem' }}>Deixe em branco para usar a chave padrão do sistema.</p>
                   </div>
                 </div>
-              )}
 
-              {connectionStatus === 'open' ? (
-                <div style={{ textAlign: 'center', padding: '1rem' }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#16a34a', marginBottom: '0.5rem' }}>Status: Ativo</div>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Instância: <b>{evolutionInstance}</b></div>
-                </div>
-              ) : qrCode ? (
-                <>
-                  <div style={{ background: 'white', padding: '1rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
-                    <img src={qrCode} alt="QR Code" style={{ width: '220px', height: '220px' }} />
-                  </div>
-                  <div style={{ marginTop: '1.25rem', fontSize: '0.85rem', fontWeight: 700, color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite' }}></div>
-                    Escaneie com o celular da Igreja
-                  </div>
-                </>
-              ) : (
-                <div style={{ width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
-                  <Loader2 size={40} className="animate-spin" style={{ color: '#3b82f6' }} />
-                  <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>{loadingConn ? 'Gerando QR Code...' : 'Aguardando...'}</span>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {connectionStatus === 'open' ? (
-                <button
-                  onClick={reiniciarConexao}
-                  className="btn btn-danger"
-                  style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700 }}
-                >
-                  Desconectar e Limpar Sessão
-                </button>
-              ) : (
-                <>
-                  <button
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <button 
                     onClick={getQRCode}
+                    disabled={loadingConn}
                     className="btn btn-primary"
                     style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700 }}
                   >
-                    Gerar QR Code
+                    {loadingConn ? 'Gerando...' : 'Gerar QR Code'}
                   </button>
-                  <button
+                  <button 
                     onClick={reiniciarConexao}
-                    className="btn btn-outline"
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, border: '1px dashed #cbd5e1' }}
+                    style={{ width: '100%', padding: '0.6rem', background: 'none', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '0.75rem', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}
                   >
                     Limpar e Reiniciar Sessão
                   </button>
-                </>
-              )}
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-                {connectionStatus === 'open' ? 'Você já pode fechar este aviso para usar as notificações.' : 'Ao fechar este aviso no "X", você será redirecionado para o Dashboard.'}
+                </div>
+              </div>
+
+              {/* Coluna Direita: QR Code Centralizado */}
+              <div style={{ flex: '1', minWidth: '240px', background: '#f8fafc', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
+                {connectionStatus === 'open' ? (
+                  <div className="animate-bounce-in" style={{ textAlign: 'center' }}>
+                    <div style={{ width: '64px', height: '64px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                      <CheckCircle size={32} color="#16a34a" />
+                    </div>
+                    <p style={{ fontWeight: 700, color: '#16a34a', fontSize: '1rem' }}>Conectado!</p>
+                  </div>
+                ) : qrCode ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div className="animate-fade-in" style={{ background: 'white', padding: '0.75rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                      <img src={qrCode} alt="QR Code" style={{ width: '180px', height: '180px', display: 'block' }} />
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', animation: 'pulse 1.5s infinite' }}></div>
+                      Escaneie com o celular da Igreja
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    {loadingConn ? (
+                      <Loader2 size={36} className="animate-spin" style={{ color: '#3b82f6' }} />
+                    ) : (
+                      <div className="loading-spinner" style={{ width: '32px', height: '32px' }}></div>
+                    )}
+                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>{loadingConn ? 'Gerando...' : 'Aguardando...'}</p>
+                  </div>
+                )}
               </div>
             </div>
+
+            <p style={{ fontSize: '0.65rem', color: '#94a3b8', textAlign: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', margin: 0 }}>
+              Você pode fechar este aviso para continuar usando o sistema.
+            </p>
           </div>
         </div>,
         document.body
