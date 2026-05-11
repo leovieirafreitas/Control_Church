@@ -4,11 +4,12 @@ import { useApp } from '../context/AppContext';
 import { Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import Dropdown from '../components/Dropdown';
+import Autocomplete from '../components/Autocomplete';
 import { MessageSquare } from 'lucide-react';
 import { MANAUS_NEIGHBORHOODS_TO_ZONES } from '../utils/manausMapping';
 
 /* ─── Modal de Novo Visitante ────────────────────────── */
-const AddVisitorModal = ({ leaders, onSave, onClose }) => {
+const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -43,7 +44,7 @@ const AddVisitorModal = ({ leaders, onSave, onClose }) => {
   };
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
       <div className="animate-scale-up" style={{ 
         maxWidth: '450px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
@@ -82,19 +83,14 @@ const AddVisitorModal = ({ leaders, onSave, onClose }) => {
               />
             </div>
           </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Bairro</label>
-            <div style={{ position: 'relative' }}>
-              <MapPin size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="text" 
-                style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
-                onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                value={form.neighborhood} 
-                onChange={e => setForm(p => ({ ...p, neighborhood: e.target.value }))} 
-              />
-            </div>
-          </div>
+          <Autocomplete
+            label="Bairro"
+            value={form.neighborhood}
+            onChange={val => setForm(p => ({ ...p, neighborhood: val }))}
+            options={neighborhoods}
+            placeholder="Ex: Cidade Nova..."
+            icon={MapPin}
+          />
 
           <div>
             <Dropdown
@@ -122,9 +118,143 @@ const AddVisitorModal = ({ leaders, onSave, onClose }) => {
   );
 };
 
+/* ─── Modal de Edição de Visitante ────────────────────────── */
+const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) => {
+  const [form, setForm] = useState({
+    name: visitor.name,
+    phone: visitor.phone ?? '',
+    neighborhood: visitor.neighborhood ?? '',
+    assigned_leader_id: visitor.assigned_leader_id ?? null
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handlePhoneChange = (e) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.substring(0, 11);
+    if (v.length > 2) v = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+    if (v.length > 10) v = `${v.substring(0, 10)}-${v.substring(10)}`;
+    setForm(p => ({ ...p, phone: v }));
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true);
+    try {
+      const res = await onSave(visitor.id, form);
+      if (res.error) {
+        alert("Erro ao salvar: " + res.error.message);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      alert("Erro interno: " + err.message);
+    }
+    setSaving(false);
+  };
+
+  return ReactDOM.createPortal(
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <div className="animate-scale-up" style={{ 
+        maxWidth: '450px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+      }}>
+        <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Editar Visitante</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+            <X size={20} color="var(--text-muted)" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
+            <input 
+              type="text" 
+              style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              value={form.name} 
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} 
+              required 
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Telefone / WhatsApp</label>
+            <div style={{ position: 'relative' }}>
+              <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+                onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                value={form.phone} 
+                onChange={handlePhoneChange} 
+              />
+            </div>
+          </div>
+          <Autocomplete
+            label="Bairro"
+            value={form.neighborhood}
+            onChange={val => setForm(p => ({ ...p, neighborhood: val }))}
+            options={neighborhoods}
+            placeholder="Ex: Cidade Nova..."
+            icon={MapPin}
+          />
+
+          <div>
+            <Dropdown
+              label="Coordenador Responsável"
+              value={form.assigned_leader_id}
+              valueLabel={leaders.find(l => l.id === form.assigned_leader_id)?.name}
+              options={leaders.map(l => ({ value: l.id, label: l.name }))}
+              onSelect={opt => setForm(p => ({ ...p, assigned_leader_id: opt.value }))}
+              placeholder="Selecione um coordenador..."
+              icon={Shield}
+            />
+          </div>
+
+          {form.assigned_leader_id && (
+            <button
+              type="button"
+              style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#e8f9ef', color: '#128c7e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: '0.2s', fontSize: '0.9rem', marginTop: '0.5rem' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'} onMouseLeave={e => e.currentTarget.style.background = '#e8f9ef'}
+              onClick={() => {
+                const leader = leaders.find(l => l.id === form.assigned_leader_id);
+                if (!leader || !leader.phone) {
+                  alert('Coordenador sem telefone cadastrado.');
+                  return;
+                }
+                const msg = encodeURIComponent(`Olá ${leader.name}!\n\nTemos um novo visitante sob sua responsabilidade:\n\nNome: *${form.name}*\nTelefone: ${form.phone}\nBairro: ${form.neighborhood}\n\nPor favor, faça o primeiro contato e dê as boas-vindas!`);
+                window.open(`https://wa.me/55${leader.phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+              }}
+            >
+              <MessageSquare size={18} /> Notificar Coordenador via WhatsApp
+            </button>
+          )}
+        </form>
+
+        <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-dark)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}>
+            {saving ? 'Salvando...' : <><Save size={18} /> Salvar Alterações</>}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 /* ─── Página Principal ─────────────────────────────────────── */
 const Visitors = () => {
   const { visitors, leaders, addVisitor, updateVisitor, deleteVisitor, promoteVisitorToMember, visitorSearch, setVisitorSearch, loading } = useApp();
+  
+  // Computar bairros únicos do sistema + mapeamento oficial
+  const systemNeighborhoods = React.useMemo(() => {
+    const fromMapping = Object.keys(MANAUS_NEIGHBORHOODS_TO_ZONES);
+    const fromVisitors = visitors.map(v => v.neighborhood).filter(Boolean);
+    return Array.from(new Set([...fromMapping, ...fromVisitors])).sort();
+  }, [visitors]);
+
   const [editingVisitor, setEditingVisitor] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -426,6 +556,7 @@ const Visitors = () => {
           visitor={editingVisitor} 
           leaders={leaders}
           onSave={updateVisitor}
+          neighborhoods={systemNeighborhoods}
           onClose={() => setEditingVisitor(null)} 
         />
       )}
@@ -434,12 +565,13 @@ const Visitors = () => {
         <AddVisitorModal 
           leaders={leaders}
           onSave={addVisitor}
+          neighborhoods={systemNeighborhoods}
           onClose={() => setShowAddModal(false)}
         />
       )}
 
-      {showDeleteModal && (
-        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+      {showDeleteModal && ReactDOM.createPortal(
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9999 }}>
           <div className="card animate-scale-up" style={{ maxWidth: '400px', width: '90%', textAlign: 'center', padding: '2rem' }}>
             <div style={{ width: '64px', height: '64px', background: '#fee2e2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
               <Trash2 size={32} color="#ef4444" />
@@ -451,11 +583,12 @@ const Visitors = () => {
               <button onClick={confirmDelete} style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Excluir</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showPromoteModal && (
-        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+      {showPromoteModal && ReactDOM.createPortal(
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9999 }}>
           <div className="card animate-scale-up" style={{ maxWidth: '450px', width: '90%', textAlign: 'center', padding: '2.5rem' }}>
             <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 20px rgba(99,102,241,0.3)' }}>
               <CheckCircle size={40} color="white" />
@@ -467,7 +600,8 @@ const Visitors = () => {
               <button onClick={confirmPromote} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>Sim, Efetivar!</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

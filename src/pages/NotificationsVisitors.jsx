@@ -647,10 +647,10 @@ const NotificationsVisitors = () => {
       </div>
 
       {/* CONTEÚDO DINÂMICO POR ABA */}
-      <div style={{ flex: 1, overflowY: activeTab === 'templates' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: activeTab === 'templates' ? '0' : '2rem' }}>
+      <div style={{ flex: 1, overflowY: activeTab === 'templates' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
         {activeTab === 'templates' && (
-          <div className="animate-slide-up" style={{ display: 'flex', flex: 1, height: 'calc(100vh - 270px)', border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', background: 'white' }}>
+          <div className="animate-slide-up" style={{ display: 'flex', flex: 1, border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', background: 'white' }}>
             {/* SIDEBAR DE MODELOS */}
             <div style={{ width: '280px', borderRight: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
               <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'white' }}>
@@ -787,7 +787,7 @@ const NotificationsVisitors = () => {
         )}
 
         {activeTab === 'mass_send' && (
-          <div className="animate-slide-up card" style={{ padding: 0, borderRadius: '24px', overflow: 'hidden' }}>
+          <div className="animate-slide-up card" style={{ padding: 0, borderRadius: '24px', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1.5rem 2rem', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', background: 'white', padding: '0.3rem', borderRadius: '12px', border: '1px solid var(--border-color)', alignSelf: 'flex-start' }}>
@@ -851,7 +851,7 @@ const NotificationsVisitors = () => {
               </div>
             </div>
 
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               <table className="table" style={{ width: '100%' }}>
                 <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 10 }}>
                   <tr>
@@ -905,8 +905,8 @@ const NotificationsVisitors = () => {
         )}
 
         {activeTab === 'settings' && (
-          <div className="animate-slide-up" style={{ flex: 1, minHeight: '600px' }}>
-            <div className="card" style={{ padding: '2.5rem', borderRadius: '32px', background: 'white', border: '1px solid var(--border-color)', boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
+          <div className="animate-slide-up" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem', borderRadius: '32px', background: 'white', border: '1px solid var(--border-color)', boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', gap: '3rem' }}>
 
