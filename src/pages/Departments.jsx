@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { useChurch } from '../context/ChurchContext';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit2, Trash2, X, Check, Building2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Building2, Search } from 'lucide-react';
 
 /* ─── Modal de Edição de Departamento ───────────────────────── */
 const EditDepartmentModal = ({ department, onClose, onSaved }) => {
@@ -306,19 +306,23 @@ const AddDepartmentModal = ({ onClose, onSaved }) => {
 /* ─── Modal de Exclusão ────────────────────────────────────── */
 const DeleteDepartmentModal = ({ onCancel, onConfirm }) => {
   return ReactDOM.createPortal(
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ padding: '2rem', maxWidth: '400px' }}>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--text-dark)' }}>Confirmar Exclusão</h3>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-          Tem certeza que deseja excluir este departamento? Vínculos com voluntários serão afetados.
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-          <button onClick={onCancel} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 500 }}>
-            Cancelar
-          </button>
-          <button onClick={onConfirm} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontWeight: 500 }}>
-            Sim, Excluir
-          </button>
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="animate-scale-up" style={{
+        maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
+      }}>
+        <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
+          <div style={{ width: '64px', height: '64px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <Trash2 size={32} />
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Excluir Departamento</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+            Tem certeza que deseja excluir este departamento? Vínculos com voluntários serão afetados. Esta ação não pode ser desfeita.
+          </p>
+        </div>
+        <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.target.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.target.style.borderColor='#e2e8f0'}>Cancelar</button>
+          <button onClick={onConfirm} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#ef4444', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.target.style.background='#dc2626'} onMouseLeave={e=>e.target.style.background='#ef4444'}>Sim, Excluir</button>
         </div>
       </div>
     </div>,
@@ -347,38 +351,56 @@ const Departments = () => {
   };
 
   return (
-    <div className="animate-fade-in flex-container">
-      <div className="mb-6" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl">Departamentos</h2>
-          <p className="text-muted">Gerencie os departamentos da igreja</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Departamentos</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Gerencie os departamentos da igreja</p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary"
-          style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          style={{
+            borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+            display: 'flex', gap: '0.6rem', alignItems: 'center',
+            background: '#3b82f6', color: 'white', border: 'none',
+            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+            boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
         >
           <Plus size={18} /> Novo Departamento
         </button>
       </div>
 
-      <div className="card flex-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 }}>
-          <h3 className="text-xl">Lista de Departamentos ({filteredDepartments.length})</h3>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Pesquisar departamento..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ maxWidth: '300px', padding: '0.5rem 1rem' }}
-          />
+
+
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', borderRadius: '24px', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap', flexShrink: 0 }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Lista de Departamentos ({filteredDepartments.length})</h3>
+          <div style={{ position: 'relative', maxWidth: '320px', width: '100%' }}>
+            <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Pesquisar departamento..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%', padding: '0.65rem 1rem 0.65rem 2.6rem',
+                borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                fontSize: '0.9rem', outline: 'none', fontWeight: 500,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+            />
+          </div>
         </div>
 
         {filteredDepartments.length > 0 ? (
-          <div className="table-container scroll-area">
-            <table className="table" style={{ position: 'relative' }}>
-              <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--bg-color)' }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }} className="custom-scrollbar">
+            <table className="table">
+              <thead>
                 <tr>
                   <th>Nome</th>
                   <th style={{ width: '100px' }}>Ações</th>

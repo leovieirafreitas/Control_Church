@@ -18,11 +18,15 @@ import {
   Meh,
   ChevronDown,
   Send,
-  Loader2
+  Loader2,
+  FileDown
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import Chart from 'react-apexcharts';
 import DatePicker from '../components/DatePicker';
+import ccLogo from '../assets/cc-logo-small.png';
 
 const FeedbackDashboard = () => {
   const { activeChurch } = useApp();
@@ -184,6 +188,140 @@ const FeedbackDashboard = () => {
       avg: parseFloat((categorySums[col] / categoryCounts[col]).toFixed(1))
     }));
     setChartData(chart);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const churchName = activeChurch?.name || 'Rede Chama';
+    const monthLabel = months.find(m => m.value === filterMonth)?.label || '';
+    const periodLabel = filterMonth === 'all' ? `Ano ${filterYear}` : `${monthLabel} / ${filterYear}`;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // ── Header ──
+    doc.setFillColor(5, 150, 105);
+    doc.rect(0, 0, pageWidth, 32, 'F');
+    
+    // Add Logo (Original ratio is approx 3:1)
+    try {
+      doc.addImage(ccLogo, 'PNG', pageWidth - 52, 8, 39, 13, undefined, 'FAST');
+    } catch (e) {
+      console.error('Error adding logo to PDF:', e);
+    }
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Feedback', 14, 13);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(churchName, 14, 21);
+    doc.text(`Período: ${periodLabel}`, 14, 27);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, pageWidth - 14, 27, { align: 'right' });
+
+    let y = 42;
+
+    // ── Resumo ──
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo Geral', 14, y);
+    y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Total de Respostas', stats.total.toString()],
+        ['Média Geral de Satisfação', `${stats.avg} / 5.0`],
+        ['Status', parseFloat(stats.avg) >= 4.5 ? 'Excelente' : parseFloat(stats.avg) >= 4 ? 'Muito Bom' : parseFloat(stats.avg) >= 3 ? 'Bom' : 'Abaixo da Média'],
+      ],
+      headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+      bodyStyles: { fontSize: 10, textColor: [30, 41, 59] },
+      alternateRowStyles: { fillColor: [240, 253, 244] },
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
+    });
+
+    y = doc.lastAutoTable.finalY + 12;
+
+    // ── Categorias ──
+    if (chartData.length > 0) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Avaliação por Categoria', 14, y);
+      y += 8;
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Categoria', 'Média', 'Status']],
+        body: chartData.map(d => [
+          d.name,
+          `${d.avg.toFixed(1)} / 5.0`,
+          d.avg >= 4.5 ? 'Excelente' : d.avg >= 4 ? 'Muito Bom' : d.avg >= 3 ? 'Bom' : 'Abaixo da Média'
+        ]),
+        headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+        bodyStyles: { fontSize: 10, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [239, 246, 255] },
+        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' } },
+        margin: { left: 14, right: 14 },
+        theme: 'grid',
+      });
+
+      y = doc.lastAutoTable.finalY + 12;
+    }
+
+    // ── Comentários ──
+    const comments = feedbacks.filter(f => f.comments);
+    if (comments.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 41, 59);
+      doc.text('Comentários dos Membros', 14, y);
+      y += 8;
+
+      autoTable(doc, {
+        startY: y,
+        head: [['Data', 'Comentário', 'Média']],
+        body: comments.map(f => {
+          const ratings = [
+            f.reception_rating, f.worship_rating, f.facilities_rating,
+            f.program_rating, f.kids_ministry_rating, f.preaching_rating, f.spiritual_atmosphere_rating
+          ].filter(v => v !== null && v !== undefined);
+          const avg = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '-';
+          return [
+            new Date(f.created_at).toLocaleDateString('pt-BR'),
+            f.comments,
+            avg
+          ];
+        }),
+        headStyles: { fillColor: [100, 116, 139], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+        bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { cellWidth: 22, halign: 'center' }, 2: { cellWidth: 18, halign: 'center' } },
+        margin: { left: 14, right: 14 },
+        theme: 'grid',
+      });
+    } else {
+      if (y > 250) { doc.addPage(); y = 20; }
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(148, 163, 184);
+      doc.text('Nenhum comentário registrado no período.', 14, y + 8);
+    }
+
+    // ── Footer ──
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${churchName} — Relatório de Feedback — ${periodLabel}`, 14, doc.internal.pageSize.getHeight() - 8);
+      doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
+    }
+
+    doc.save(`feedback_${churchName.replace(/\s+/g, '_')}_${periodLabel.replace(/\s+\/\s+/g, '_')}.pdf`);
   };
 
   const copyLink = () => {
@@ -383,6 +521,23 @@ const FeedbackDashboard = () => {
             </div>
           </div>
 
+          <button
+            onClick={exportPDF}
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#ffffff', color: '#475569', border: '1.5px solid #e2e8f0',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.color = '#059669'; e.currentTarget.style.background = '#f0fdf4'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = '#ffffff'; }}
+          >
+            <FileDown size={18} />
+            Relatório PDF
+          </button>
+
           <button 
             onClick={copyLink} 
             style={{ 
@@ -406,30 +561,30 @@ const FeedbackDashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1.25rem' }}>
             <div style={{ 
               background: parseFloat(stats.avg) >= 4 ? '#059669' : parseFloat(stats.avg) >= 3 ? '#3b82f6' : '#ef4444',
-              borderRadius: '20px', padding: '2rem', color: 'white', display: 'flex', alignItems: 'center', gap: '1.5rem',
+              borderRadius: '20px', padding: '1.25rem 2rem', color: 'white', display: 'flex', alignItems: 'center', gap: '1.5rem',
               boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
               transition: 'all 0.4s ease'
             }}>
-              <div style={{ background: 'rgba(255,255,255,0.2)', width: '64px', height: '64px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {parseFloat(stats.avg) >= 4 ? (
-                  <Smile size={36} color="white" strokeWidth={2.5} />
+                  <Smile size={28} color="white" strokeWidth={2.5} />
                 ) : parseFloat(stats.avg) >= 3 ? (
-                  <Meh size={36} color="white" strokeWidth={2.5} />
+                  <Meh size={28} color="white" strokeWidth={2.5} />
                 ) : (
-                  <Frown size={36} color="white" strokeWidth={2.5} />
+                  <Frown size={28} color="white" strokeWidth={2.5} />
                 )}
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.9, fontWeight: 500 }}>Status de Satisfação</p>
-                <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: 800 }}>
+                <h2 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>
                   {parseFloat(stats.avg) >= 4.5 ? 'Excelente' : parseFloat(stats.avg) >= 4 ? 'Muito Bom' : parseFloat(stats.avg) >= 3 ? 'Bom' : 'Abaixo da Média'}
                 </h2>
               </div>
             </div>
 
-            <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ background: '#ecfdf5', color: '#059669', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Star size={28} />
+            <div className="card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div style={{ background: '#ecfdf5', color: '#059669', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Star size={24} />
               </div>
               <div>
                 <p style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Média Geral</p>
@@ -437,9 +592,9 @@ const FeedbackDashboard = () => {
               </div>
             </div>
 
-            <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              <div style={{ background: '#eff6ff', color: '#3b82f6', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={28} />
+            <div className="card" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div style={{ background: '#eff6ff', color: '#3b82f6', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={24} />
               </div>
               <div>
                 <p style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Respostas</p>

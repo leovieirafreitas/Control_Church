@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { DollarSign, Download, Trash2, X, ChevronDown, CalendarX, CheckCircle, ScanLine } from 'lucide-react';
+import { DollarSign, Download, Trash2, X, ChevronDown, CalendarX, CheckCircle, ScanLine, Search } from 'lucide-react';
 import VolunteerSearch from '../components/VolunteerSearch.jsx';
 import DatePicker from '../components/DatePicker';
 import PdfScanner from '../components/PdfScanner';
@@ -279,48 +279,72 @@ const Tithes = () => {
 
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl" style={{ marginBottom: '0.1rem' }}>Contribuições</h2>
-          <p className="text-muted" style={{ fontSize: '0.82rem' }}>Registro e controle de contribuidores</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Contribuições</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Registro e controle de contribuidores</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Pesquisar contribuidor..."
-            value={searchVolunteer}
-            onChange={e => setSearchVolunteer(e.target.value)}
-            style={{ width: '280px', margin: 0, padding: '0.4rem 0.75rem', fontSize: '0.855rem' }}
-          />
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Total Filtrado</span>
-            <span style={{ fontWeight: 700, color: 'var(--primary-dark)', fontSize: '1.05rem' }}>{formatCurrency(totalAmount)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', width: '280px' }}>
+            <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Pesquisar contribuidor..."
+              value={searchVolunteer}
+              onChange={e => setSearchVolunteer(e.target.value)}
+              style={{
+                width: '100%', padding: '0.6rem 1rem 0.6rem 2.5rem',
+                borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                fontSize: '0.85rem', outline: 'none', fontWeight: 500,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+            />
           </div>
 
           <button
             onClick={exportPDF}
-            className="btn btn-primary"
-            style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', gap: '0.4rem' }}
             disabled={filteredTithes.length === 0}
+            style={{
+              borderRadius: '20px', height: '42px', padding: '0 1.25rem',
+              display: 'flex', gap: '0.5rem', alignItems: 'center',
+              background: '#3b82f6', color: 'white', border: 'none',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s',
+              opacity: filteredTithes.length === 0 ? 0.6 : 1
+            }}
+            onMouseEnter={e => !e.currentTarget.disabled && (e.currentTarget.style.transform='translateY(-2px)')}
+            onMouseLeave={e => !e.currentTarget.disabled && (e.currentTarget.style.transform='translateY(0)')}
           >
-            <Download size={16} />
-            Exportar PDF
+            <Download size={18} /> Exportar PDF
           </button>
 
           <button
             onClick={() => setShowScanner(true)}
-            className="btn btn-outline"
-            style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', gap: '0.4rem' }}
+            style={{
+              borderRadius: '20px', height: '42px', padding: '0 1.25rem',
+              display: 'flex', gap: '0.5rem', alignItems: 'center',
+              background: 'white', color: '#64748b', border: '1.5px solid #e2e8f0',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor='#3b82f6'}
+            onMouseLeave={e => e.currentTarget.style.borderColor='#e2e8f0'}
           >
-            <ScanLine size={16} />
-            Analisar PDF (Beta)
+            <ScanLine size={18} /> Analisar PDF
           </button>
+
+          <div style={{
+            background: 'white', padding: '0.5rem 1.25rem', borderRadius: '18px',
+            border: '1.5px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '140px'
+          }}>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>Total Filtrado</span>
+            <span style={{ fontWeight: 900, color: '#2563eb', fontSize: '1.25rem', letterSpacing: '-0.02em' }}>{formatCurrency(totalAmount)}</span>
+          </div>
         </div>
       </div>
 
@@ -328,12 +352,12 @@ const Tithes = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '1.25rem', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
         {/* ── Formulário compacto ── */}
-        <div className="card" style={{ padding: '1rem', alignSelf: 'start' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.875rem', color: 'var(--text-dark)' }}>Registrar Contribuição</h3>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        <div className="card" style={{ padding: '1.5rem', alignSelf: 'start', borderRadius: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.25rem', color: '#334155' }}>Registrar Contribuição</h3>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
             <div>
-              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Voluntário</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Voluntário</label>
               <VolunteerSearch
                 volunteers={volunteers}
                 value={formData.volunteerId}
@@ -343,13 +367,12 @@ const Tithes = () => {
             </div>
 
             <div>
-              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Valor (R$)</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Valor (R$)</label>
               <input
                 ref={amountRef}
                 type="number"
                 step="0.01"
                 min="0"
-                className="form-input"
                 placeholder="0,00"
                 value={formData.amount}
                 onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
@@ -361,13 +384,18 @@ const Tithes = () => {
                     }
                   }
                 }}
-                style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
+                style={{
+                  width: '100%', padding: '0.65rem 1rem',
+                  borderRadius: '15px', border: '1.5px solid #e2e8f0',
+                  fontSize: '0.9rem', outline: 'none', fontWeight: 500,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                }}
                 required
               />
             </div>
 
             <div>
-              <label className="form-label" style={{ fontSize: '0.78rem', marginBottom: '0.3rem' }}>Data</label>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Data</label>
               <DatePicker
                 value={formData.date}
                 onChange={(date) => setFormData(prev => ({ ...prev, date }))}
@@ -376,9 +404,15 @@ const Tithes = () => {
 
             <button
               type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: '0.375rem', fontSize: '0.875rem', padding: '0.55rem' }}
               disabled={!formData.volunteerId || !formData.amount || !formData.date}
+              style={{
+                width: '100%', marginTop: '0.5rem', height: '44px',
+                borderRadius: '15px', background: '#3b82f6', color: 'white',
+                border: 'none', fontWeight: 700, fontSize: '0.9rem',
+                cursor: 'pointer', transition: 'all 0.2s',
+                boxShadow: '0 4px 10px rgba(59,130,246,0.2)',
+                opacity: (!formData.volunteerId || !formData.amount || !formData.date) ? 0.6 : 1
+              }}
             >
               Confirmar
             </button>
@@ -386,22 +420,21 @@ const Tithes = () => {
         </div>
 
         {/* ── Histórico e Pendentes ── */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', padding: '1rem 1.25rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', padding: '1.5rem', borderRadius: '24px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
 
-              <div style={{ display: 'flex', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '2rem' }}>
                 <button
                   onClick={() => setActiveTab('history')}
-                  style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'history' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'history' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
+                  style={{ padding: '0.75rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'history' ? '3px solid #3b82f6' : '3px solid transparent', color: activeTab === 'history' ? '#1e293b' : '#94a3b8', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', marginBottom: '-2px' }}
                 >
-                  Histórico de Contribuições
+                  Histórico
                 </button>
                 <button
                   onClick={() => setActiveTab('pending')}
-                  style={{ padding: '0.5rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'pending' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'pending' ? 'var(--text-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', fontSize: '1.1rem', transition: 'all 0.2s', marginBottom: '-0.6rem' }}
+                  style={{ padding: '0.75rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'pending' ? '3px solid #3b82f6' : '3px solid transparent', color: activeTab === 'pending' ? '#1e293b' : '#94a3b8', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', marginBottom: '-2px' }}
                 >
-                  Pendentes — {months.find(m => m.value === pendingRefMonth)?.label} ({pendingVolunteers.length})
+                  Pendentes ({pendingVolunteers.length})
                 </button>
               </div>
 
@@ -631,11 +664,11 @@ const Tithes = () => {
             </div>
 
 
-          </div>
+
 
           {activeTab === 'history' ? (
             filteredTithes.length > 0 ? (
-              <div className="table-container" style={{ flex: 1, overflowY: 'auto' }}>
+              <div className="table-container custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
                 <table className="table">
                   <thead>
                     <tr>
@@ -694,7 +727,7 @@ const Tithes = () => {
             )
           ) : (
             pendingVolunteers.length > 0 ? (
-              <div className="table-container" style={{ flex: 1, overflowY: 'auto' }}>
+              <div className="table-container custom-scrollbar" style={{ flex: 1, overflowY: 'auto' }}>
                 <table className="table">
                   <thead>
                     <tr>

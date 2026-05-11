@@ -139,35 +139,40 @@ const Members = () => {
   if (loading) return <div className="p-8 text-center text-muted">Carregando membros...</div>;
 
   return (
-    <div className="animate-fade-in flex-container">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl flex items-center gap-2">
-            <UserCheck size={28} className="text-primary" />
-            Membros
-          </h2>
-          <p className="text-muted">Gestão de membros da igreja</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Membros</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Gestão de membros da igreja</p>
         </div>
       </div>
 
-      <div className="card flex-card">
-        <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
-          <h3 className="text-xl">Lista de Membros ({filteredMembers.length})</h3>
+
+
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', borderRadius: '24px', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Lista de Membros ({filteredMembers.length})</h3>
           <div style={{ position: 'relative', maxWidth: '320px', width: '100%' }}>
-            <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
               type="text"
-              className="form-input"
               placeholder="Pesquisar membro..."
               value={memberSearch}
               onChange={(e) => setMemberSearch(e.target.value)}
-              style={{ paddingLeft: '2.5rem' }}
+              style={{
+                width: '100%', padding: '0.65rem 1rem 0.65rem 2.6rem',
+                borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                fontSize: '0.9rem', outline: 'none', fontWeight: 500,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
         </div>
 
         {filteredMembers.length > 0 ? (
-          <div className="scroll-area">
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }} className="custom-scrollbar">
             <table className="table">
               <thead>
                 <tr>
@@ -233,18 +238,23 @@ const Members = () => {
 
       {/* Modal de Exclusão */}
       {showDeleteModal && ReactDOM.createPortal(
-        <div className="modal-overlay">
-          <div className="card p-8 max-w-md w-full text-center">
-            <div className="w-14 h-14 bg-red-100 text-danger rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={28} />
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-scale-up" style={{
+            maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <Trash2 size={32} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Excluir Membro</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                Deseja realmente excluir <strong style={{color: 'var(--text-dark)'}}>{memberToDelete?.name}</strong>? Esta ação não pode ser desfeita.
+              </p>
             </div>
-            <h3 className="text-xl font-bold mb-2">Excluir Membro</h3>
-            <p className="text-muted mb-6">
-              Deseja realmente excluir <strong className="text-dark">{memberToDelete?.name}</strong>?
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setShowDeleteModal(false)} className="btn btn-outline">Cancelar</button>
-              <button onClick={confirmDelete} className="btn btn-danger">Excluir</button>
+            <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.target.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.target.style.borderColor='#e2e8f0'}>Cancelar</button>
+              <button onClick={confirmDelete} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#ef4444', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.target.style.background='#dc2626'} onMouseLeave={e=>e.target.style.background='#ef4444'}>Excluir</button>
             </div>
           </div>
         </div>,

@@ -421,97 +421,116 @@ const Visitors = () => {
 
   if (loading) return <div className="p-8 text-center text-muted">Carregando visitantes...</div>;
 
-  return (
-    <div className="animate-fade-in flex-container">
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h2 className="text-2xl flex items-center gap-2">
-            <UserPlus size={28} className="text-purple-600" />
-            Visitantes / Inscrições
-          </h2>
-          <p className="text-muted">Acompanhe novos visitantes e pessoas interessadas</p>
-        </div>
+  const waitingCount = filteredVisitors.filter(v => !v.assigned_leader_id).length;
+  const assignedCount = filteredVisitors.filter(v => v.assigned_leader_id).length;
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button 
+  return (
+    <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* ── Header ── */}
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Visitantes / Inscrições</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Acompanhe novos visitantes e pessoas interessadas</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
             onClick={exportToPDF}
-            style={{ 
-              padding: '0.75rem 1.25rem', borderRadius: '14px', border: '2px solid #e2e8f0', background: 'white', color: 'var(--text-muted)', 
-              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s'
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#ffffff', color: '#475569', border: '1.5px solid #e2e8f0',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)', transition: 'all 0.2s'
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#f8fafc';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6'; e.currentTarget.style.background='#eff6ff'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor='#e2e8f0'; e.currentTarget.style.color='#475569'; e.currentTarget.style.background='#ffffff'; }}
           >
-            <FileDown size={20} /> Relatório PDF
+            <FileDown size={18} /> Relatório PDF
           </button>
 
-          <div style={{ width: '220px' }}>
-            <DatePicker 
-              value={filterDate}
-              onChange={setFilterDate}
-              placeholder="Filtrar por data"
-            />
+          <div style={{ width: '210px' }}>
+            <DatePicker value={filterDate} onChange={setFilterDate} placeholder="Filtrar por data" />
           </div>
-          <button 
+
+          <button
             onClick={() => setShowAddModal(true)}
-            style={{ 
-              padding: '0.75rem 1.25rem', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: 'white', 
-              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#3b82f6', color: 'white', border: 'none',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
           >
-            <UserPlus size={20} /> Novo Visitante
+            <UserPlus size={18} /> Novo Visitante
           </button>
         </div>
       </div>
 
-      <div className="card flex-card">
-        <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
-          <h3 className="text-xl">Novas Inscrições ({filteredVisitors.length})</h3>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
-            {/* Fila de Espera */}
-            <button 
+      {/* ── Stats Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
+          display: 'flex', alignItems: 'center', gap: '1.5rem',
+          boxShadow: '0 10px 25px -5px rgba(59,130,246,0.3)',
+          transition: 'all 0.4s ease'
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <UserPlus size={28} color="white" />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Visitantes</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800 }}>{filteredVisitors.length}</h2>
+          </div>
+        </div>
+
+        {/* Waiting list card */}
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#fff7ed', color: '#ea580c', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <AlertCircle size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fila de Espera</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{waitingCount}</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Table Card ── */}
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.75rem', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>
+            Novas Inscrições <span style={{ background: '#eff6ff', color: '#3b82f6', borderRadius: '20px', padding: '2px 12px', fontSize: '0.85rem', fontWeight: 800, marginLeft: '0.5rem' }}>{filteredVisitors.length}</span>
+          </h3>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+            {/* Fila de Espera toggle */}
+            <button
               onClick={() => setShowWaitingListOnly(!showWaitingListOnly)}
-              style={{ 
-                padding: '0.6rem 1rem', 
-                borderRadius: '12px',
+              style={{
+                padding: '0.5rem 1rem', borderRadius: '20px',
                 border: showWaitingListOnly ? '2px solid #ef4444' : '2px solid #e2e8f0',
                 background: showWaitingListOnly ? '#fee2e2' : 'white',
-                color: showWaitingListOnly ? '#dc2626' : 'var(--text-muted)',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                cursor: 'pointer',
-                transition: '0.2s'
+                color: showWaitingListOnly ? '#dc2626' : '#64748b',
+                fontWeight: 700, fontSize: '0.82rem',
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                cursor: 'pointer', transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
-              <AlertCircle size={16} />
-              {showWaitingListOnly ? 'Na Fila' : 'Fila de Espera'}
-              {visitors.filter(v => !v.assigned_leader_id).length > 0 && (
-                <span style={{ 
-                  background: showWaitingListOnly ? '#dc2626' : '#94a3b8', 
-                  color: 'white', 
-                  padding: '2px 6px', 
-                  borderRadius: '6px', 
-                  fontSize: '0.7rem' 
-                }}>
-                  {visitors.filter(v => !v.assigned_leader_id).length}
+              <AlertCircle size={14} />
+              Fila de Espera
+              {waitingCount > 0 && (
+                <span style={{ background: showWaitingListOnly ? '#dc2626' : '#94a3b8', color: 'white', padding: '2px 7px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800 }}>
+                  {waitingCount}
                 </span>
               )}
             </button>
 
             {/* Zonas */}
-            <div style={{ minWidth: '160px' }}>
+            <div style={{ minWidth: '155px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '20px' }}>
               <Dropdown
                 value={filterZone}
                 valueLabel={filterZone === 'all' ? 'Todas as Zonas' : filterZone}
@@ -529,37 +548,55 @@ const Visitors = () => {
                 onSelect={opt => setFilterZone(opt.value)}
               />
             </div>
-            
+
             {/* Coordenadores */}
-            <div style={{ minWidth: '200px' }}>
+            <div style={{ minWidth: '185px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '20px' }}>
               <Dropdown
                 value={filterCoordinator}
-                valueLabel={filterCoordinator === 'all' ? 'Todos Coordenadores' : (leaders.find(l => l.id === filterCoordinator)?.name || 'Desconhecido')}
+                valueLabel={filterCoordinator === 'all' 
+                  ? 'Todos Coordenadores' 
+                  : (() => {
+                      const l = leaders.find(l => l.id === filterCoordinator);
+                      if (!l) return 'Desconhecido';
+                      const count = visitors.filter(v => v.assigned_leader_id === l.id).length;
+                      return `${l.name} (${count})`;
+                    })()
+                }
                 options={[
                   { value: 'all', label: 'Todos Coordenadores' },
-                  ...leaders.map(l => ({ value: l.id, label: l.name }))
+                  ...leaders.map(l => {
+                    const count = visitors.filter(v => v.assigned_leader_id === l.id).length;
+                    return { value: l.id, label: `${l.name} (${count})` };
+                  })
                 ]}
                 onSelect={opt => setFilterCoordinator(opt.value)}
               />
             </div>
 
-            {/* Pesquisa */}
-            <div style={{ position: 'relative', maxWidth: '280px', width: '100%' }}>
-              <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            {/* Search */}
+            <div style={{ position: 'relative', maxWidth: '240px', width: '100%' }}>
+              <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
               <input
                 type="text"
-                className="form-input"
                 placeholder="Pesquisar visitante..."
                 value={visitorSearch}
                 onChange={(e) => setVisitorSearch(e.target.value)}
-                style={{ width: '100%', paddingLeft: '2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', padding: '0.6rem 1rem 0.6rem 2.5rem', outline: 'none' }}
+                style={{
+                  width: '100%', paddingLeft: '2.4rem', padding: '0.55rem 1rem 0.55rem 2.4rem',
+                  borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                  fontSize: '0.875rem', outline: 'none', transition: 'all 0.2s',
+                  fontWeight: 500, color: '#334155',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                }}
+                onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
               />
             </div>
           </div>
         </div>
 
         {filteredVisitors.length > 0 ? (
-          <div className="scroll-area">
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }} className="custom-scrollbar">
             <table className="table">
               <thead>
                 <tr>
@@ -597,17 +634,11 @@ const Visitors = () => {
                           </span>
                         </div>
                       ) : (
-                        <div style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '0.4rem', 
-                          padding: '0.25rem 0.6rem', 
-                          background: 'var(--primary-light)', 
-                          color: 'var(--primary)', 
-                          borderRadius: '8px', 
-                          fontSize: '0.75rem', 
-                          fontWeight: '700',
-                          border: '1px solid var(--border-color)'
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                          padding: '0.25rem 0.75rem', background: '#fff7ed', color: '#ea580c',
+                          borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
+                          border: '1px solid #fed7aa'
                         }}>
                           <AlertCircle size={12} /> Fila de Espera
                         </div>
@@ -620,28 +651,24 @@ const Visitors = () => {
                     </td>
                     <td>
                       {v.followup_status === 'confirmed' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#ecfdf5', color: '#059669', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', border: '1px solid #d1fae5', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#ecfdf5', color: '#059669', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #d1fae5', whiteSpace: 'nowrap', width: 'fit-content' }}>
                           <CheckCircle size={12} /> Confirmado
                         </div>
                       )}
                       {v.followup_status === 'denied' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '800', border: '1px solid #fee2e2', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800, border: '1px solid #fee2e2', whiteSpace: 'nowrap', width: 'fit-content' }}>
                           <AlertCircle size={12} /> Sem Contato
                         </div>
                       )}
                       {(!v.followup_status || v.followup_status === 'pending') && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#f8fafc', color: '#64748b', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', width: 'fit-content' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.3rem 0.75rem', background: '#f1f5f9', color: '#64748b', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid #e2e8f0', whiteSpace: 'nowrap', width: 'fit-content' }}>
                           <Clock size={12} /> Pendente
                         </div>
                       )}
                     </td>
                     <td>
                       <div className="flex gap-3 items-center">
-                        <button 
-                          onClick={() => handlePromoteClick(v)} 
-                          className="btn-action-text" 
-                          title="Promover a Membro"
-                        >
+                        <button onClick={() => handlePromoteClick(v)} className="btn-action-text" title="Promover a Membro">
                           <ArrowRight size={14} /> Membro
                         </button>
                         <button onClick={() => setEditingVisitor(v)} className="btn-icon" title="Editar">
@@ -658,8 +685,9 @@ const Visitors = () => {
             </table>
           </div>
         ) : (
-          <div className="p-12 text-center text-muted">
-            {visitorSearch ? 'Nenhum visitante encontrado para esta busca.' : 'Nenhum visitante cadastrado no momento.'}
+          <div style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', background: '#f8fafc', borderRadius: '20px', border: '2px dashed #e2e8f0', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <UserPlus size={56} style={{ margin: '0 auto 1.5rem', opacity: 0.15 }} />
+            <p style={{ fontWeight: 600 }}>{visitorSearch ? 'Nenhum visitante encontrado para esta busca.' : 'Nenhum visitante cadastrado no momento.'}</p>
           </div>
         )}
       </div>

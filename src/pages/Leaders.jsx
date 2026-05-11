@@ -327,54 +327,106 @@ const Leaders = () => {
     }
   };
 
+  const totalNeighborhoodsCount = leaders.reduce((acc, l) => {
+    const nbs = l.neighborhoods ? l.neighborhoods.split(', ') : [];
+    return acc + nbs.length;
+  }, 0);
+
   if (loading) return <div className="p-8 text-center text-muted">Carregando coordenadores...</div>;
 
   return (
-    <div className="animate-fade-in flex-container">
-      <div className="mb-6 flex justify-between items-center">
+    <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl flex items-center gap-2">
-            <Shield size={28} className="text-blue-600" />
-            Coordenadores de Bairro
-          </h2>
-          <p className="text-muted">Gestão de coordenadores responsáveis por áreas geográficas</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Coordenadores de Bairro</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Gestão de coordenadores responsáveis por áreas geográficas</p>
         </div>
-         <div style={{ display: 'flex', gap: '0.75rem' }}>
+         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button 
             onClick={copyRegisterLink} 
-            className="btn btn-outline"
             style={{ 
-              borderColor: copied ? 'var(--primary)' : 'var(--border-color)',
-              color: copied ? 'var(--primary)' : 'inherit',
-              minWidth: '200px'
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#ffffff', color: copied ? '#3b82f6' : '#475569', 
+              border: copied ? '1.5px solid #3b82f6' : '1.5px solid #e2e8f0',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)', transition: 'all 0.2s'
             }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6'; e.currentTarget.style.background='#eff6ff'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor=copied ? '#3b82f6' : '#e2e8f0'; e.currentTarget.style.color=copied ? '#3b82f6' : '#475569'; e.currentTarget.style.background='#ffffff'; }}
           >
             {copied ? <><Check size={18} /> Link Copiado!</> : <><Link2 size={18} /> Copiar Link Cadastro</>}
           </button>
-          <button onClick={() => { setEditingLeader(null); setModalOpen(true); }} className="btn btn-primary">
+          <button 
+            onClick={() => { setEditingLeader(null); setModalOpen(true); }} 
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#3b82f6', color: 'white', border: 'none',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
+          >
             <Plus size={20} /> Novo Coordenador
           </button>
         </div>
       </div>
 
-      <div className="card flex-card">
-        <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
-          <h3 className="text-xl">Coordenadores Ativos ({filteredLeaders.length})</h3>
-          <div className="relative" style={{ maxWidth: '320px', width: '100%', position: 'relative' }}>
-            <Search size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      {/* ── Stats Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem', flexShrink: 0 }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
+          display: 'flex', alignItems: 'center', gap: '1.5rem',
+          boxShadow: '0 10px 25px -5px rgba(59,130,246,0.3)',
+          transition: 'all 0.4s ease'
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Shield size={28} color="white" />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Coordenadores</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800 }}>{leaders.length}</h2>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#eff6ff', color: '#3b82f6', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <MapPin size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bairros Atendidos</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{totalNeighborhoodsCount}</h2>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', borderRadius: '24px', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>Coordenadores Ativos ({filteredLeaders.length})</h3>
+          <div style={{ position: 'relative', maxWidth: '320px', width: '100%' }}>
+            <Search size={18} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
               type="text"
-              className="form-input"
-              style={{ paddingLeft: '2.5rem' }}
               placeholder="Pesquisar coordenador..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '0.65rem 1rem 0.65rem 2.6rem',
+                borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                fontSize: '0.9rem', outline: 'none', fontWeight: 500,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
             />
           </div>
         </div>
 
         {filteredLeaders.length > 0 ? (
-          <div className="scroll-area">
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }} className="custom-scrollbar">
             <table className="table">
               <thead>
                 <tr>

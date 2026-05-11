@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useApp } from '../context/AppContext';
-import { Plus, Edit2, X, Check, Search, Trash2 } from 'lucide-react';
+import logoImg from '../assets/cc-logo-small.png';
+import { 
+  Plus, Edit2, X, Check, Search, Trash2, Users, Briefcase, 
+  FileDown, UserPlus, Phone, Calendar, Mail, Fingerprint,
+  MoreVertical, CheckCircle, AlertCircle
+} from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 
 /* ─── Modal de Novo Voluntário ─────────────────────────────── */
@@ -88,92 +95,127 @@ const AddVolunteerModal = ({ onSave, onClose }) => {
   const filtered = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Novo Voluntário</h3>
-          <button onClick={onClose} className="btn-close">
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', zIndex: 9999 }}>
+      <div className="animate-scale-up" style={{ 
+        maxWidth: '500px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+      }}>
+        <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Novo Voluntário</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
             <X size={20} color="var(--text-muted)" />
           </button>
         </div>
 
-        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '70vh', overflowY: 'auto' }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Nome Completo</label>
-            <input type="text" className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="João da Silva" autoFocus />
+        <form onSubmit={handleSave} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
+            <input 
+              type="text" 
+              autoFocus
+              style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+              required 
+            />
           </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Contato (Telefone/WhatsApp)</label>
-            <input type="text" className="form-input" value={contact} onChange={handlePhoneChange} placeholder="(00) 00000-0000" />
-          </div>
-
-          {/* Seção Perfil Futuro */}
-          <div style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '1rem', border: '1px dashed var(--border-color)' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Dados para perfil (opcional)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Data de Nascimento</label>
-                <DatePicker 
-                  value={birthDate} 
-                  onChange={setBirthDate} 
-                  placeholder="dd/mm/aaaa"
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>WhatsApp</label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="text" 
+                  style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.2rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.85rem', outline: 'none', fontWeight: '500' }}
+                  onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  value={contact} 
+                  onChange={handlePhoneChange} 
                 />
               </div>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>CPF</label>
-                <input type="text" className="form-input" value={cpf} onChange={handleCpfChange} placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nascimento</label>
+              <DatePicker value={birthDate} onChange={setBirthDate} placeholder="00/00/0000" />
+            </div>
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>Dados Auxiliares</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ position: 'relative' }}>
+                <Fingerprint size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="text" 
+                  placeholder="CPF (Opcional)"
+                  style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+                  value={cpf} onChange={handleCpfChange}
+                />
               </div>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>E-mail</label>
-                <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+              <div style={{ position: 'relative' }}>
+                <Mail size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="email" 
+                  placeholder="E-mail (Opcional)"
+                  style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+                  value={email} onChange={e => setEmail(e.target.value)}
+                />
               </div>
             </div>
           </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Departamentos <span style={{ color: 'red' }}>*</span></label>
-            {departmentIds.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                {departmentIds.map(id => {
-                  const dep = departments.find(d => d.id === id);
-                  if (!dep) return null;
-                  return (
-                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      {dep.name}
-                      <button type="button" onClick={() => toggleDept(id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-dark)', display: 'flex', padding: 0 }}><X size={12} /></button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input type="text" className="form-input" placeholder="Buscar departamento..." value={deptSearch} onChange={e => setDeptSearch(e.target.value)} style={{ paddingLeft: '2.2rem' }} />
+
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Departamentos <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+              <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                placeholder="Buscar departamento..." 
+                value={deptSearch} 
+                onChange={e => setDeptSearch(e.target.value)}
+                style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+              />
             </div>
-            <div style={{ marginTop: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-              {filtered.length === 0 ? (
-                <p style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encontrado.</p>
-              ) : filtered.map(d => (
-                <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}
-                  onMouseOver={e => e.currentTarget.style.background = 'var(--bg-color)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '120px', overflowY: 'auto', padding: '0.25rem' }}>
+              {filtered.map(d => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => toggleDept(d.id)}
+                  style={{
+                    padding: '0.4rem 0.8rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '600',
+                    cursor: 'pointer', transition: 'all 0.2s', border: '1.5px solid',
+                    background: departmentIds.includes(d.id) ? '#eff6ff' : 'white',
+                    borderColor: departmentIds.includes(d.id) ? '#3b82f6' : '#e2e8f0',
+                    color: departmentIds.includes(d.id) ? '#2563eb' : '#64748b'
+                  }}
                 >
-                  <input type="checkbox" checked={departmentIds.includes(d.id)} onChange={() => toggleDept(d.id)} style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-dark)' }}>{d.name}</span>
-                </label>
+                  {d.name}
+                </button>
               ))}
             </div>
           </div>
-          <div style={{ padding: '0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => setSendWelcome(!sendWelcome)}>
-            <div style={{ width: '20px', height: '20px', borderRadius: '4px', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: sendWelcome ? 'var(--primary)' : 'transparent', transition: '0.2s' }}>
-              {sendWelcome && <Check size={14} color="white" />}
-            </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-dark)' }}>Enviar mensagem de boas-vindas via WhatsApp</span>
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 500, fontFamily: 'Inter, sans-serif' }}>Cancelar</button>
-          <button onClick={handleSave} disabled={saving || !name.trim()} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: (saving || !name.trim()) ? 'not-allowed' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: (saving || !name.trim()) ? 0.7 : 1 }}>
-            <Plus size={16} /> {saving ? 'Salvando...' : 'Cadastrar'}
+          <div 
+            onClick={() => setSendWelcome(!sendWelcome)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', 
+              background: sendWelcome ? '#f0fdf4' : '#f8fafc', borderRadius: '12px', border: '1px solid',
+              borderColor: sendWelcome ? '#bbf7d0' : '#e2e8f0', transition: '0.2s'
+            }}
+          >
+            <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: sendWelcome ? '#22c55e' : 'white', border: '2px solid', borderColor: sendWelcome ? '#22c55e' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }}>
+              {sendWelcome && <Check size={12} color="white" strokeWidth={3} />}
+            </div>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: sendWelcome ? '#166534' : '#64748b' }}>Enviar boas-vindas via WhatsApp</span>
+          </div>
+        </form>
+
+        <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving || !name.trim() || departmentIds.length === 0} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (saving || !name.trim() || departmentIds.length === 0) ? 0.6 : 1 }}>
+            {saving ? 'Processando...' : <><UserPlus size={18} /> Cadastrar</>}
           </button>
         </div>
       </div>
@@ -210,9 +252,7 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
   };
 
   const toggleDept = (id) => {
-    setDepartmentIds(prev =>
-      prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
-    );
+    setDepartmentIds(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
   };
 
   const handleSave = async () => {
@@ -226,160 +266,128 @@ const EditVolunteerModal = ({ volunteer, departments, onSave, onClose }) => {
     onClose();
   };
 
-  const filtered = departments.filter(d =>
-    d.name.toLowerCase().includes(deptSearch.toLowerCase())
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  const filtered = departments.filter(d => d.name.toLowerCase().includes(deptSearch.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay">
-      <div className="modal-content">
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-            Editar Voluntário
-          </h3>
-          <button onClick={onClose} className="btn-close">
+    <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', zIndex: 9999 }}>
+      <div className="animate-scale-up" style={{ 
+        maxWidth: '500px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+      }}>
+        <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Editar Voluntário</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
             <X size={20} color="var(--text-muted)" />
           </button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '70vh', overflowY: 'auto' }}>
-
-          {/* Nome */}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Nome Completo</label>
-            <input
-              type="text"
-              className="form-input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="João da Silva"
+        <div className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
+            <input 
+              type="text" 
+              style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              value={name} 
+              onChange={e => setName(e.target.value)} 
             />
           </div>
 
-          {/* Contato */}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Contato (Telefone/WhatsApp)</label>
-            <input
-              type="text"
-              className="form-input"
-              value={contact}
-              onChange={handlePhoneChange}
-              placeholder="(00) 00000-0000"
-            />
-          </div>
-
-          {/* Seção Perfil Futuro */}
-          <div style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '1rem', border: '1px dashed var(--border-color)' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Dados para perfil (opcional)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Data de Nascimento</label>
-                <DatePicker 
-                  value={birthDate} 
-                  onChange={setBirthDate} 
-                  placeholder="dd/mm/aaaa"
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>WhatsApp</label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="text" 
+                  style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.2rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.85rem', outline: 'none', fontWeight: '500' }}
+                  onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  value={contact} 
+                  onChange={handlePhoneChange} 
                 />
               </div>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>CPF</label>
-                <input type="text" className="form-input" value={cpf} onChange={handleCpfChange} placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nascimento</label>
+              <DatePicker value={birthDate} onChange={setBirthDate} placeholder="00/00/0000" />
+            </div>
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ position: 'relative' }}>
+                <Fingerprint size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="text" 
+                  placeholder="CPF"
+                  style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+                  value={cpf} onChange={handleCpfChange}
+                />
               </div>
-              <div>
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>E-mail</label>
-                <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
+              <div style={{ position: 'relative' }}>
+                <Mail size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="email" 
+                  placeholder="E-mail"
+                  style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+                  value={email} onChange={e => setEmail(e.target.value)}
+                />
               </div>
             </div>
           </div>
 
-          {/* Departamentos */}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">
-              Departamentos <span style={{ color: 'red' }}>*</span>
-            </label>
-
-            {/* Tags selecionadas */}
-            {departmentIds.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                {departmentIds.map(id => {
-                  const dep = departments.find(d => d.id === id);
-                  if (!dep) return null;
-                  return (
-                    <span key={id} style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.25rem 0.6rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      {dep.name}
-                      <button
-                        type="button"
-                        onClick={() => toggleDept(id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-dark)', display: 'flex', padding: 0 }}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Busca de departamentos */}
-            <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Buscar departamento..."
-                value={deptSearch}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Departamentos <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+              <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                placeholder="Buscar departamento..." 
+                value={deptSearch} 
                 onChange={e => setDeptSearch(e.target.value)}
-                style={{ paddingLeft: '2.2rem' }}
+                style={{ width: '100%', padding: '0.7rem 0.75rem 0.7rem 2.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
               />
             </div>
-
-            {/* Lista de departamentos */}
-            <div style={{ marginTop: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-              {filtered.length === 0 ? (
-                <p style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum encontrado.</p>
-              ) : filtered.map(d => (
-                <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}
-                  onMouseOver={e => e.currentTarget.style.background = 'var(--bg-color)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', maxHeight: '120px', overflowY: 'auto', padding: '0.25rem' }}>
+              {filtered.map(d => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => toggleDept(d.id)}
+                  style={{
+                    padding: '0.4rem 0.8rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '600',
+                    cursor: 'pointer', transition: 'all 0.2s', border: '1.5px solid',
+                    background: departmentIds.includes(d.id) ? '#eff6ff' : 'white',
+                    borderColor: departmentIds.includes(d.id) ? '#3b82f6' : '#e2e8f0',
+                    color: departmentIds.includes(d.id) ? '#2563eb' : '#64748b'
+                  }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={departmentIds.includes(d.id)}
-                    onChange={() => toggleDept(d.id)}
-                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-dark)' }}>{d.name}</span>
-                </label>
+                  {d.name}
+                </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
-          <button
-            onClick={onClose}
-            style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 500, fontFamily: 'Inter, sans-serif' }}
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 600, fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: saving ? 0.7 : 1 }}
-          >
-            <Check size={16} /> {saving ? 'Salvando...' : 'Salvar'}
+        <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            {saving ? 'Processando...' : <><Check size={18} /> Salvar Alterações</>}
           </button>
         </div>
       </div>
-    </div>
-    , document.body);
+    </div>,
+    document.body
+  );
 };
 
 /* ─── Página Principal ─────────────────────────────────────── */
 const Volunteers = () => {
-  const { volunteers, addVolunteer, updateVolunteer, deleteVolunteer, departments, volunteerSearch, setVolunteerSearch } = useApp();
+  const { 
+    volunteers, addVolunteer, updateVolunteer, deleteVolunteer, 
+    departments, volunteerSearch, setVolunteerSearch, activeChurch 
+  } = useApp();
+  
   const [editingVolunteer, setEditingVolunteer] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -404,76 +412,170 @@ const Volunteers = () => {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const now = new Date().toLocaleDateString('pt-BR');
+    const churchName = activeChurch?.name || 'Chama Church';
+    
+    // Logo
+    try { doc.addImage(logoImg, 'PNG', 160, 10, 35, 12); } catch (e) {}
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(59, 130, 246); // blue-500
+    doc.text('Relatório de Voluntários', 14, 22);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100, 116, 139);
+    doc.text(churchName, 14, 30);
+    
+    doc.setFontSize(10);
+    doc.text(`Data: ${now}`, 14, 36);
+    doc.line(14, 40, 196, 40);
+
+    // Tabela
+    const body = filteredVolunteers.map(v => [
+      v.name,
+      v.contact || '---',
+      v.departmentIds.map(id => departments.find(d => d.id === id)?.name).filter(Boolean).join(', '),
+      new Date(v.createdAt).toLocaleDateString('pt-BR')
+    ]);
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Nome', 'Contato', 'Departamentos', 'Cadastro']],
+      body: body,
+      theme: 'grid',
+      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 9 }
+    });
+
+    doc.save(`Voluntarios_${churchName.replace(/\s+/g, '_')}_${now.replace(/\//g, '-')}.pdf`);
+  };
+
+  const activeDeptsCount = Array.from(new Set(volunteers.flatMap(v => v.departmentIds))).length;
+
   return (
-    <div className="animate-fade-in flex-container">
-      <div className="mb-6" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="animate-fade-in dashboard-main-wrapper" style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+      
+      {/* ── Header ── */}
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl">Voluntários</h2>
-          <p className="text-muted">Cadastro e gestão de voluntários</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Gestão de Voluntários</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Administre a equipe e departamentos da igreja</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary"
-          style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <Plus size={18} /> Novo Voluntário
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#3b82f6', color: 'white', border: 'none',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
+          >
+            <Plus size={18} /> Novo Voluntário
+          </button>
+        </div>
       </div>
 
-      {/* Lista */}
-      <div className="card vol-list-card flex-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem', flexShrink: 0 }}>
-          <h3 className="text-xl">Lista de Voluntários ({filteredVolunteers.length})</h3>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Pesquisar voluntário..."
-            value={volunteerSearch}
-            onChange={(e) => setVolunteerSearch(e.target.value)}
-            style={{ maxWidth: '280px', padding: '0.5rem 1rem' }}
-          />
+      {/* ── Stats Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
+          display: 'flex', alignItems: 'center', gap: '1.5rem',
+          boxShadow: '0 10px 25px -5px rgba(59,130,246,0.3)'
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Voluntários</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800 }}>{volunteers.length}</h2>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#f0fdf4', color: '#16a34a', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Briefcase size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Depts Ativos</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{activeDeptsCount}</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Table Card ── */}
+      <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', borderRadius: '24px', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#334155', margin: 0 }}>
+            Listagem de Voluntários <span style={{ background: '#eff6ff', color: '#3b82f6', borderRadius: '20px', padding: '2px 10px', fontSize: '0.8rem', marginLeft: '0.5rem' }}>{filteredVolunteers.length}</span>
+          </h3>
+          <div style={{ position: 'relative', maxWidth: '300px', width: '100%' }}>
+            <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Pesquisar por nome..."
+              value={volunteerSearch}
+              onChange={(e) => setVolunteerSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '0.65rem 1rem 0.65rem 2.6rem',
+                borderRadius: '20px', border: '1.5px solid #e2e8f0',
+                fontSize: '0.9rem', outline: 'none', fontWeight: 500
+              }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+            />
+          </div>
         </div>
 
         {volunteers.length > 0 ? (
-          <div className="vol-table-wrap scroll-area">
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }} className="custom-scrollbar">
             <table className="table">
-              <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'var(--bg-color)' }}>
+              <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Contato</th>
-                  <th>Departamentos</th>
-                  <th>Cadastro</th>
-                  <th style={{ width: '80px' }}>Ações</th>
+                  <th style={{ background: 'transparent', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nome</th>
+                  <th style={{ background: 'transparent', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contato</th>
+                  <th style={{ background: 'transparent', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Departamentos</th>
+                  <th style={{ background: 'transparent', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cadastro</th>
+                  <th style={{ background: 'transparent', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredVolunteers.map((vol) => (
-                  <tr key={vol.id}>
-                    <td className="font-bold">{vol.name}</td>
-                    <td>{vol.contact}</td>
+                  <tr key={vol.id} style={{ transition: '0.2s' }}>
+                    <td style={{ fontWeight: 700, color: '#1e293b' }}>{vol.name}</td>
+                    <td style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Phone size={14} opacity={0.6} /> {vol.contact || '---'}
+                      </div>
+                    </td>
                     <td>
-                      <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                         {vol.departmentIds.map(id => {
                           const name = departments.find(d => d.id === id)?.name;
-                          return name ? <span key={id} className="badge badge-blue">{name}</span> : null;
+                          return name ? (
+                            <span key={id} style={{ background: '#f1f5f9', color: '#475569', padding: '2px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid #e2e8f0' }}>
+                              {name}
+                            </span>
+                          ) : null;
                         })}
                       </div>
                     </td>
-                    <td>{new Date(vol.createdAt).toLocaleDateString('pt-BR')}</td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                        <button
-                          onClick={() => setEditingVolunteer(vol)}
-                          className="btn-icon"
-                          title="Editar"
-                        >
+                    <td style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{new Date(vol.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                        <button onClick={() => setEditingVolunteer(vol)} className="btn-icon" title="Editar" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none' }}>
                           <Edit2 size={16} />
                         </button>
-                        <button
-                          onClick={() => handleDeleteClick(vol)}
-                          className="btn-icon danger"
-                          title="Excluir"
-                        >
+                        <button onClick={() => handleDeleteClick(vol)} className="btn-icon danger" title="Excluir" style={{ background: '#fef2f2', color: '#ef4444', border: 'none' }}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -484,8 +586,9 @@ const Volunteers = () => {
             </table>
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-            Nenhum voluntário cadastrado.
+          <div style={{ padding: '4rem', textAlign: 'center', background: '#f8fafc', borderRadius: '24px', border: '2px dashed #e2e8f0' }}>
+            <Users size={48} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
+            <p style={{ color: '#94a3b8', fontWeight: 600 }}>Nenhum voluntário cadastrado no momento.</p>
           </div>
         )}
       </div>
@@ -497,7 +600,6 @@ const Volunteers = () => {
         />
       )}
 
-      {/* Modal de edição */}
       {editingVolunteer && (
         <EditVolunteerModal
           volunteer={editingVolunteer}
@@ -507,32 +609,17 @@ const Volunteers = () => {
         />
       )}
 
-      {/* Modal de confirmação de exclusão */}
       {showDeleteModal && ReactDOM.createPortal(
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="card" style={{ padding: '2.5rem', borderRadius: '20px', maxWidth: '420px', width: '95%', border: '1px solid var(--border-color)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', textAlign: 'center' }}>
-            <div style={{ background: '#fee2e2', color: 'var(--danger)', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-              <Trash2 size={28} />
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 99999 }}>
+          <div className="card animate-scale-up" style={{ maxWidth: '400px', width: '95%', textAlign: 'center', padding: '2rem', borderRadius: '24px' }}>
+            <div style={{ width: '64px', height: '64px', background: '#fee2e2', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Trash2 size={32} color="#ef4444" />
             </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.75rem', color: 'var(--text-dark)' }}>Excluir Voluntário</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.6', fontSize: '0.95rem' }}>
-              Tem certeza que deseja excluir o voluntário <strong style={{ color: 'var(--text-dark)' }}>{volunteerToDelete?.name}</strong>? Esta ação não poderá ser desfeita.
-            </p>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>Excluir Voluntário</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Deseja mesmo remover <b>{volunteerToDelete?.name}</b>? Esta ação é permanente.</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <button
-                onClick={() => { setShowDeleteModal(false); setVolunteerToDelete(null); }}
-                className="btn btn-outline"
-                style={{ width: '100%', padding: '0.75rem' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="btn btn-danger"
-                style={{ width: '100%', padding: '0.75rem' }}
-              >
-                Sim, Excluir
-              </button>
+              <button onClick={() => setShowDeleteModal(false)} style={{ padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: 700, color: '#64748b' }}>Cancelar</button>
+              <button onClick={confirmDelete} style={{ padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#ef4444', color: 'white', fontWeight: 700 }}>Confirmar</button>
             </div>
           </div>
         </div>,
@@ -543,3 +630,4 @@ const Volunteers = () => {
 };
 
 export default Volunteers;
+
