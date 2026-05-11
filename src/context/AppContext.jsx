@@ -87,8 +87,18 @@ export const AppProvider = ({ children }) => {
             table: 'visitors',
             filter: `church_id=eq.${activeChurch.id}`
           },
-          () => {
-            fetchAll(activeChurch.id);
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              setVisitors(prev => {
+                // Evita duplicatas se o próprio usuário inseriu
+                if (prev.some(v => v.id === payload.new.id)) return prev;
+                return [payload.new, ...prev];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setVisitors(prev => prev.map(v => v.id === payload.new.id ? payload.new : v));
+            } else if (payload.eventType === 'DELETE') {
+              setVisitors(prev => prev.filter(v => v.id === payload.old.id));
+            }
           }
         )
         .subscribe();
@@ -255,10 +265,17 @@ export const AppProvider = ({ children }) => {
 
     // Se não tiver coordenador assinado ainda e tivermos o bairro, faz a auto-atribuição
     if (!assignedLeaderId && data.neighborhood) {
-      const { data: matchingLeaders } = await supabase
-        .from('coordenadores')
-        .select('id, neighborhoods')
-        .eq('church_id', churchId);
+      // Prioriza coordenadores já carregados no estado para evitar requisição extra
+      const sourceLeaders = leaders.length > 0 ? leaders : null;
+      
+      let matchingLeaders = sourceLeaders;
+      if (!matchingLeaders) {
+        const { data: res } = await supabase
+          .from('coordenadores')
+          .select('id, neighborhoods')
+          .eq('church_id', churchId);
+        matchingLeaders = res;
+      }
 
       if (matchingLeaders) {
         const matchedLeader = matchingLeaders.find(l => {
@@ -294,34 +311,34 @@ export const AppProvider = ({ children }) => {
         setVisitors(prev => [...prev, created]);
       }
 
-      // FALLBACK: Se não foi encontrado coordenador, notifica o administrador do sistema
+      // FALLBACK: Notifica o administrador de forma não-bloqueante
       if (!leaderFound) {
-        try {
-          const { getConnectedNumber, sendWhatsAppMessage } = await import('../utils/whatsapp');
-          const instance = churchSettings?.evolution_instance || 'Control_Church';
-          const apiKey = churchSettings?.evolution_apikey || import.meta.env.VITE_EVOLUTION_API_KEY;
-          const adminNumber = await getConnectedNumber(instance, apiKey);
-          
-          if (adminNumber) {
-            const churchName = churches.find(c => c.id === churchId)?.name || 'Chama Church';
+        (async () => {
+          try {
+            const { getConnectedNumber, sendWhatsAppMessage } = await import('../utils/whatsapp');
+            const instance = churchSettings?.evolution_instance || 'Control_Church';
+            const apiKey = churchSettings?.evolution_apikey || import.meta.env.VITE_EVOLUTION_API_KEY;
+            const adminNumber = await getConnectedNumber(instance, apiKey);
             
-            // Busca template customizado ou usa o padrão
-            const savedMsg = localStorage.getItem('system_alert_msg');
-            const defaultAlert = `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
-            
-            const rawMsg = savedMsg || defaultAlert;
-            const alertMsg = rawMsg
-              .replace(/{{nome}}/g, data.name || '')
-              .replace(/{{telefone}}/g, data.phone || '')
-              .replace(/{{bairro}}/g, data.neighborhood || 'Não informado')
-              .replace(/{{unidade}}/g, churchName)
-              .replace(/\\n/g, '\n');
+            if (adminNumber) {
+              const churchName = churches.find(c => c.id === churchId)?.name || 'Chama Church';
+              const savedMsg = localStorage.getItem('system_alert_msg');
+              const defaultAlert = `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
+              
+              const rawMsg = savedMsg || defaultAlert;
+              const alertMsg = rawMsg
+                .replace(/{{nome}}/g, data.name || '')
+                .replace(/{{telefone}}/g, data.phone || '')
+                .replace(/{{bairro}}/g, data.neighborhood || 'Não informado')
+                .replace(/{{unidade}}/g, churchName)
+                .replace(/\\n/g, '\n');
 
-            await sendWhatsAppMessage(adminNumber, alertMsg, instance, apiKey);
+              await sendWhatsAppMessage(adminNumber, alertMsg, instance, apiKey);
+            }
+          } catch (err) {
+            console.error('Erro silencioso na notificação de contingência:', err);
           }
-        } catch (err) {
-          console.error('Erro ao enviar notificação de contingência:', err);
-        }
+        })();
       }
     }
     return { error, data: created };

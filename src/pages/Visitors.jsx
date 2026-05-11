@@ -7,19 +7,14 @@ import Dropdown from '../components/Dropdown';
 import { MessageSquare } from 'lucide-react';
 import { MANAUS_NEIGHBORHOODS_TO_ZONES } from '../utils/manausMapping';
 
-/* ─── Modal de Edição de Visitante ────────────────────────── */
-const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
+/* ─── Modal de Novo Visitante ────────────────────────── */
+const AddVisitorModal = ({ leaders, onSave, onClose }) => {
   const [form, setForm] = useState({
-    name: visitor.name,
-    phone: visitor.phone ?? '',
-    neighborhood: visitor.neighborhood ?? '',
-    assigned_leader_id: visitor.assigned_leader_id ?? null
+    name: '',
+    phone: '',
+    neighborhood: '',
+    assigned_leader_id: null
   });
-
-  const registrationOptions = [
-    { value: 'visitor', label: 'Visitante' },
-    { value: 'register', label: 'Inscrição' }
-  ];
   const [saving, setSaving] = useState(false);
 
   const handlePhoneChange = (e) => {
@@ -30,22 +25,21 @@ const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
     setForm(p => ({ ...p, phone: v }));
   };
 
-  const handleSave = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      const res = await onSave(visitor.id, form);
+      const res = await onSave(form);
       if (res.error) {
-        console.error("Erro ao salvar:", res.error);
-        alert("Erro ao salvar: " + res.error.message);
+        alert("Erro ao cadastrar: " + res.error.message);
+      } else {
+        onClose();
       }
     } catch (err) {
-      console.error(err);
       alert("Erro interno: " + err.message);
     }
     setSaving(false);
-    onClose();
   };
 
   return ReactDOM.createPortal(
@@ -55,17 +49,18 @@ const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
       }}>
         <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Editar Visitante</h3>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-dark)' }}>Novo Visitante</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
             <X size={20} color="var(--text-muted)" />
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+        <form onSubmit={handleSubmit} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
             <input 
               type="text" 
+              autoFocus
               style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
               onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
               value={form.name} 
@@ -79,6 +74,7 @@ const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
               <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
                 type="text" 
+                placeholder="(00) 00000-0000"
                 style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
                 onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                 value={form.phone} 
@@ -102,40 +98,22 @@ const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
 
           <div>
             <Dropdown
-              label="Coordenador Responsável"
+              label="Atribuir Coordenador"
               value={form.assigned_leader_id}
               valueLabel={leaders.find(l => l.id === form.assigned_leader_id)?.name}
               options={leaders.map(l => ({ value: l.id, label: l.name }))}
               onSelect={opt => setForm(p => ({ ...p, assigned_leader_id: opt.value }))}
-              placeholder="Selecione um coordenador..."
+              placeholder="Auto-atribuição por bairro..."
               icon={Shield}
             />
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>Se vazio, o sistema tentará mapear pelo bairro automaticamente.</p>
           </div>
-
-          {form.assigned_leader_id && (
-            <button
-              type="button"
-              style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#e8f9ef', color: '#128c7e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: '0.2s', fontSize: '0.9rem', marginTop: '0.5rem' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'} onMouseLeave={e => e.currentTarget.style.background = '#e8f9ef'}
-              onClick={() => {
-                const leader = leaders.find(l => l.id === form.assigned_leader_id);
-                if (!leader || !leader.phone) {
-                  alert('Coordenador sem telefone cadastrado.');
-                  return;
-                }
-                const msg = encodeURIComponent(`Olá ${leader.name}!\n\nTemos um novo visitante sob sua responsabilidade:\n\nNome: *${form.name}*\nTelefone: ${form.phone}\nBairro: ${form.neighborhood}\n\nPor favor, faça o primeiro contato e dê as boas-vindas!`);
-                window.open(`https://wa.me/55${leader.phone.replace(/\D/g, '')}?text=${msg}`, '_blank');
-              }}
-            >
-              <MessageSquare size={18} /> Notificar Coordenador via WhatsApp
-            </button>
-          )}
         </form>
 
         <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
           <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
-          <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e=>e.currentTarget.style.background='var(--primary-dark)'} onMouseLeave={e=>e.currentTarget.style.background='var(--primary)'}>
-            {saving ? 'Salvando...' : <><Save size={18} /> Salvar Alterações</>}
+          <button onClick={handleSubmit} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e=>e.currentTarget.style.background='var(--primary-dark)'} onMouseLeave={e=>e.currentTarget.style.background='var(--primary)'}>
+            {saving ? 'Cadastrando...' : <><CheckCircle size={18} /> Cadastrar Visitante</>}
           </button>
         </div>
       </div>
@@ -146,8 +124,9 @@ const EditVisitorModal = ({ visitor, leaders, onSave, onClose }) => {
 
 /* ─── Página Principal ─────────────────────────────────────── */
 const Visitors = () => {
-  const { visitors, leaders, updateVisitor, deleteVisitor, promoteVisitorToMember, visitorSearch, setVisitorSearch, loading } = useApp();
+  const { visitors, leaders, addVisitor, updateVisitor, deleteVisitor, promoteVisitorToMember, visitorSearch, setVisitorSearch, loading } = useApp();
   const [editingVisitor, setEditingVisitor] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [visitorToDelete, setVisitorToDelete] = useState(null);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
@@ -228,12 +207,26 @@ const Visitors = () => {
           <p className="text-muted">Acompanhe novos visitantes e pessoas interessadas</p>
         </div>
 
-        <div style={{ width: '220px' }}>
-          <DatePicker 
-            value={filterDate}
-            onChange={setFilterDate}
-            placeholder="Filtrar por data"
-          />
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ width: '220px' }}>
+            <DatePicker 
+              value={filterDate}
+              onChange={setFilterDate}
+              placeholder="Filtrar por data"
+            />
+          </div>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            style={{ 
+              padding: '0.75rem 1.25rem', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: 'white', 
+              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <UserPlus size={20} /> Novo Visitante
+          </button>
         </div>
       </div>
 
@@ -428,64 +421,53 @@ const Visitors = () => {
         )}
       </div>
 
-      {/* Modal de Edição */}
       {editingVisitor && (
         <EditVisitorModal 
           visitor={editingVisitor} 
           leaders={leaders}
-          onSave={updateVisitor} 
+          onSave={updateVisitor}
           onClose={() => setEditingVisitor(null)} 
         />
       )}
 
-      {/* Modal de Exclusão */}
-      {showDeleteModal && ReactDOM.createPortal(
-        <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-scale-up" style={{
-            maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
-          }}>
-            <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
-              <div style={{ width: '64px', height: '64px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                <Trash2 size={32} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Excluir Visitante</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                Deseja realmente excluir <strong style={{color: 'var(--text-dark)'}}>{visitorToDelete?.name}</strong>? Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
-              <button onClick={confirmDelete} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#ef4444', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='#dc2626'} onMouseLeave={e=>e.currentTarget.style.background='#ef4444'}>Excluir</button>
-            </div>
-          </div>
-        </div>,
-        document.body
+      {showAddModal && (
+        <AddVisitorModal 
+          leaders={leaders}
+          onSave={addVisitor}
+          onClose={() => setShowAddModal(false)}
+        />
       )}
 
-      {/* Modal de Promoção */}
-      {showPromoteModal && ReactDOM.createPortal(
-        <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="animate-scale-up" style={{
-            maxWidth: '400px', width: '90%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)'
-          }}>
-            <div style={{ padding: '2rem 2rem 1.5rem', textAlign: 'center' }}>
-              <div style={{ width: '64px', height: '64px', backgroundColor: '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                <UserPlus size={32} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-dark)', marginBottom: '0.5rem' }}>Tornar Membro</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                Deseja promover <strong style={{color: 'var(--text-dark)'}}>{visitorToPromote?.name}</strong> a Membro oficial da igreja?
-              </p>
+      {showDeleteModal && (
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="card animate-scale-up" style={{ maxWidth: '400px', width: '90%', textAlign: 'center', padding: '2rem' }}>
+            <div style={{ width: '64px', height: '64px', background: '#fee2e2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Trash2 size={32} color="#ef4444" />
             </div>
-            <div style={{ padding: '1.25rem 2rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setShowPromoteModal(false)} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
-              <button onClick={confirmPromote} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: '#4f46e5', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.background='#4338ca'} onMouseLeave={e=>e.currentTarget.style.background='#4f46e5'}>Promover</button>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Excluir Visitante?</h3>
+            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Tem certeza que deseja excluir *{visitorToDelete?.name}*? Esta ação não pode ser desfeita.</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={confirmDelete} style={{ flex: 1, padding: '0.75rem', borderRadius: '12px', border: 'none', background: '#ef4444', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Excluir</button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
+      )}
+
+      {showPromoteModal && (
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <div className="card animate-scale-up" style={{ maxWidth: '450px', width: '90%', textAlign: 'center', padding: '2.5rem' }}>
+            <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 20px rgba(99,102,241,0.3)' }}>
+              <CheckCircle size={40} color="white" />
+            </div>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Efetivar Novo Membro!</h3>
+            <p className="text-muted" style={{ marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>Você está prestes a converter o visitante *{visitorToPromote?.name}* em um membro oficial da igreja. Deseja prosseguir?</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowPromoteModal(false)} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Ainda não</button>
+              <button onClick={confirmPromote} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>Sim, Efetivar!</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
