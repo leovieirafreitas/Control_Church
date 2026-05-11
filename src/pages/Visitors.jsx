@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useApp } from '../context/AppContext';
-import { Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import logoImg from '../assets/cc-logo-small.png';
+import { 
+  Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, 
+  MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, 
+  CheckCircle, MessageSquare, FileDown 
+} from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import Dropdown from '../components/Dropdown';
 import Autocomplete from '../components/Autocomplete';
-import { MessageSquare } from 'lucide-react';
 import { MANAUS_NEIGHBORHOODS_TO_ZONES } from '../utils/manausMapping';
 
 /* ─── Modal de Novo Visitante ────────────────────────── */
@@ -246,7 +252,11 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
 
 /* ─── Página Principal ─────────────────────────────────────── */
 const Visitors = () => {
-  const { visitors, leaders, addVisitor, updateVisitor, deleteVisitor, promoteVisitorToMember, visitorSearch, setVisitorSearch, loading } = useApp();
+  const { 
+    visitors, leaders, addVisitor, updateVisitor, deleteVisitor, 
+    promoteVisitorToMember, visitorSearch, setVisitorSearch, loading,
+    activeChurch 
+  } = useApp();
   
   // Computar bairros únicos do sistema + mapeamento oficial
   const systemNeighborhoods = React.useMemo(() => {
@@ -298,6 +308,91 @@ const Visitors = () => {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // Mais recentes primeiro
   }, [visitors, visitorSearch, showWaitingListOnly, filterCoordinator, filterZone, filterDate]);
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const now = new Date().toLocaleDateString('pt-BR');
+    const churchName = activeChurch?.name || 'Chama Church';
+    
+    // --- LOGO ---
+    try {
+      doc.addImage(logoImg, 'PNG', 160, 10, 35, 12);
+    } catch (e) {
+      console.error('Erro ao adicionar logo:', e);
+    }
+
+    // --- CABEÇALHO ---
+    doc.setFontSize(22);
+    doc.setTextColor(79, 70, 229); // indigo-600
+    doc.text('Relatório de Visitantes', 14, 22);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(churchName, 14, 30);
+    
+    doc.setFontSize(10);
+    doc.text(`Data de emissão: ${now}`, 14, 36);
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, 42, 196, 42);
+    
+    // --- TABELA 1: POR COORDENADOR ---
+    const coordStats = leaders.map(leader => {
+      const count = visitors.filter(v => v.assigned_leader_id === leader.id).length;
+      return [leader.name, count.toString()];
+    }).filter(row => parseInt(row[1]) > 0);
+    
+    // Adiciona fila de espera
+    const waitingCount = visitors.filter(v => !v.assigned_leader_id).length;
+    if (waitingCount > 0) {
+      coordStats.push(['Fila de Espera (Não Atribuídos)', waitingCount.toString()]);
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59); // slate-800
+    doc.text('1. Visitantes por Coordenador', 14, 50);
+    
+    autoTable(doc, {
+      startY: 55,
+      head: [['Coordenador Responsável', 'Total de Visitantes']],
+      body: coordStats,
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241], fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 5 }
+    });
+    
+    // --- TABELA 2: POR ZONA ---
+    const zones = ['Zona Norte', 'Zona Leste', 'Zona Sul', 'Zona Centro-Sul', 'Zona Centro-Oeste', 'Zona Oeste', 'Zona Rural', 'Outros'];
+    const zoneStats = zones.map(zone => {
+      const count = visitors.filter(v => {
+        const vZone = MANAUS_NEIGHBORHOODS_TO_ZONES[v.neighborhood] || 'Outros';
+        return vZone === zone;
+      }).length;
+      return [zone, count.toString()];
+    }).filter(row => parseInt(row[1]) > 0);
+
+    const nextY = doc.lastAutoTable.finalY + 15;
+    doc.text('2. Distribuição por Zona (Manaus)', 14, nextY);
+    
+    autoTable(doc, {
+      startY: nextY + 5,
+      head: [['Zona / Região', 'Total de Visitantes']],
+      body: zoneStats,
+      theme: 'grid',
+      headStyles: { fillColor: [168, 85, 247], fontStyle: 'bold' }, // purple-500
+      styles: { fontSize: 10, cellPadding: 5 }
+    });
+
+    // Rodapé
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(`Página ${i} de ${pageCount}`, 196, 285, { align: 'right' });
+    }
+    
+    doc.save(`Relatorio_Visitantes_${churchName.replace(/\s+/g, '_')}_${now.replace(/\//g, '-')}.pdf`);
+  };
+
   const handleDeleteClick = (v) => {
     setVisitorToDelete(v);
     setShowDeleteModal(true);
@@ -338,6 +433,24 @@ const Visitors = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button 
+            onClick={exportToPDF}
+            style={{ 
+              padding: '0.75rem 1.25rem', borderRadius: '14px', border: '2px solid #e2e8f0', background: 'white', color: 'var(--text-muted)', 
+              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+          >
+            <FileDown size={20} /> Relatório PDF
+          </button>
+
           <div style={{ width: '220px' }}>
             <DatePicker 
               value={filterDate}
