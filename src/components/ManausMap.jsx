@@ -277,20 +277,20 @@ const ManausMap = ({ leadersPerformance = [], allowedZones = null }) => {
   }, [selectedZone, selectedLeaderId]);
 
   return (
-    <div className="card flex-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'row', height: '100%' }}>
+    <div className="card flex-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'row', height: '100%', borderRadius: '24px' }}>
       {/* Sidebar do Mapa */}
       <div style={{ width: '300px', minWidth: '260px', background: 'var(--surface)', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
-          <h3 className="text-md font-semibold mb-2">Zonas & Coordenadores</h3>
+        <div style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid var(--border-color)' }}>
+          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>Zonas & Coordenadores</h3>
           
-          <div style={{ position: 'relative', marginBottom: '1rem' }} ref={dropdownRef}>
+          <div style={{ position: 'relative', marginBottom: '0.5rem' }} ref={dropdownRef}>
             <button 
               onClick={() => setDropdownOpen(!dropdownOpen)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0.65rem 1rem', background: dropdownOpen ? 'var(--primary-light)' : 'var(--surface)',
+                padding: '0.5rem 0.75rem', background: dropdownOpen ? 'var(--primary-light)' : 'var(--surface)',
                 border: `1.5px solid ${dropdownOpen ? 'var(--primary)' : 'var(--border-color)'}`,
-                borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600,
+                borderRadius: '12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
                 color: dropdownOpen ? 'var(--primary-dark)' : 'var(--text-dark)',
                 boxShadow: dropdownOpen ? '0 0 0 3px rgba(59,130,246,0.1)' : '0 1px 2px rgba(0,0,0,0.05)',
                 transition: 'all 0.2s', outline: 'none'
@@ -308,7 +308,7 @@ const ManausMap = ({ leadersPerformance = [], allowedZones = null }) => {
               <div style={{
                 position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: '100%', zIndex: 1000,
                 background: 'var(--surface)', border: '1.5px solid var(--primary)', borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(59,130,246,0.15)', padding: '0.35rem',
+                boxShadow: '0 10px 25px rgba(59,130,246,0.15)', padding: '0.25rem',
                 maxHeight: '220px', overflowY: 'auto', animation: 'fadeIn 0.15s ease-out'
               }}>
                 {['Todas', ...(allowedZones ?? Object.keys(ZONES_COORDS))].map(z => (
@@ -337,8 +337,8 @@ const ManausMap = ({ leadersPerformance = [], allowedZones = null }) => {
               type="text" 
               placeholder="Buscar coordenador..." 
               style={{ 
-                width: '100%', padding: '0.65rem 1rem 0.65rem 2.5rem', borderRadius: '12px', 
-                border: '1.5px solid #e2e8f0', background: '#f8fafc', fontSize: '0.875rem', 
+                width: '100%', padding: '0.5rem 0.75rem 0.5rem 2.25rem', borderRadius: '12px', 
+                border: '1.5px solid #e2e8f0', background: '#f8fafc', fontSize: '0.8rem', 
                 color: '#0f172a', transition: 'all 0.2s', outline: 'none'
               }}
               onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'; }}
@@ -352,37 +352,37 @@ const ManausMap = ({ leadersPerformance = [], allowedZones = null }) => {
         <div className="map-sidebar-scroll" style={{ 
           flex: 1, 
           overflowY: 'auto', 
-          padding: '1rem', 
+          padding: '0.4rem', 
           backgroundColor: '#f8fafc',
           minHeight: 0
         }}>
           {filteredLeaders.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               {filteredLeaders.map(l => (
                 <div 
                   key={l.id} 
                   onClick={() => setSelectedLeaderId(selectedLeaderId === l.id ? null : l.id)}
                   style={{ 
                     background: selectedLeaderId === l.id ? 'var(--primary-light)' : '#fff', 
-                    padding: '0.65rem 0.75rem', 
-                    borderRadius: '12px', 
+                    padding: '0.35rem 0.6rem', 
+                    borderRadius: '10px', 
                     border: `1.5px solid ${selectedLeaderId === l.id ? 'var(--primary)' : 'var(--border-color)'}`, 
                     boxShadow: 'var(--shadow-sm)',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600, color: 'var(--text-dark)', minWidth: 0 }}>
-                      <Shield size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600, color: 'var(--text-dark)', minWidth: 0 }}>
+                      <Shield size={12} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8rem' }}>{l.name}</span>
                     </div>
-                    <span style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.15rem 0.5rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0, marginLeft: '0.5rem' }}>
+                    <span style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '0.1rem 0.4rem', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0, marginLeft: '0.5rem' }}>
                       {l.visitorsCount} vis.
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <MapPin size={12} style={{ flexShrink: 0 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    <MapPin size={10} style={{ flexShrink: 0 }} />
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {l.neighborhoods || 'Geral'}
                     </span>

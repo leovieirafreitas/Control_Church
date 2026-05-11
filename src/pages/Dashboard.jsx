@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Grid, DollarSign, ArrowUpRight, TrendingUp, TrendingDown, ChevronDown, Clock, CalendarX, CheckCircle, Shield, UserPlus, MapPin, MoreVertical, ChevronRight } from 'lucide-react';
-
+import { Users, Grid, DollarSign, ArrowUpRight, TrendingUp, TrendingDown, ChevronDown, Clock, CalendarX, CheckCircle, Shield, UserPlus, MapPin, MoreVertical, ChevronRight, LayoutDashboard, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ManausMap from '../components/ManausMap';
 import { useChurch } from '../context/ChurchContext';
 import Chart from 'react-apexcharts';
-
 
 const Dashboard = () => {
   const { volunteers, departments, tithes, members, visitors, leaders } = useApp();
@@ -53,7 +51,6 @@ const Dashboard = () => {
   const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032]
     .map(y => ({ value: y.toString(), label: y.toString() }));
 
-  /* ── Auto-Cycling List Component ──────────────────────── */
   const CyclingList = ({ items, renderItem, interval = 4000 }) => {
     const [index, setIndex] = useState(0);
     const [fade, setFade] = useState(true);
@@ -78,7 +75,7 @@ const Dashboard = () => {
         transition: 'opacity 0.5s ease-in-out',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.4rem',
+        gap: '0.6rem',
         flex: 1,
         minHeight: 0,
         overflowY: 'auto',
@@ -87,7 +84,7 @@ const Dashboard = () => {
         {visibleItems.map((item, i) => renderItem(item, i))}
         {items.length === 0 && (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            Nenhum registro.
+            Nenhum registro ativo no momento.
           </div>
         )}
       </div>
@@ -103,329 +100,200 @@ const Dashboard = () => {
 
   const totalTithes = filteredTithes.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // --- Tendência ---
   const getTendency = () => {
     if (filterMonth === 'all' || filterYear === 'all') return null;
-
     let prevMonth = parseInt(filterMonth) - 1;
     let prevYear = parseInt(filterYear);
-    if (prevMonth === 0) {
-      prevMonth = 12;
-      prevYear -= 1;
-    }
-
+    if (prevMonth === 0) { prevMonth = 12; prevYear -= 1; }
     const prevTithes = tithes.filter(t => {
       const d = new Date(t.date + 'T12:00:00');
       return d.getFullYear() === prevYear && (d.getMonth() + 1) === prevMonth;
     });
-
     const prevTotal = prevTithes.reduce((acc, curr) => acc + curr.amount, 0);
     const prevMonthLabel = months.find(m => m.value === prevMonth.toString())?.label || 'mês anterior';
-
     if (prevTotal === 0 && totalTithes === 0) return null;
     if (prevTotal === 0 && totalTithes > 0) return { percent: 100, isPositive: true, text: `Novo registro! (vs ${prevMonthLabel})` };
-
     const diff = totalTithes - prevTotal;
     const percent = Math.abs((diff / prevTotal) * 100).toFixed(1);
-
-    return {
-      percent: percent.replace('.0', ''),
-      isPositive: diff >= 0,
-      text: `vs ${prevMonthLabel}`
-    };
+    return { percent: percent.replace('.0', ''), isPositive: diff >= 0, text: `vs ${prevMonthLabel}` };
   };
   const tendency = getTendency();
-
-  // Pendentes: voluntários que NÃO diezmaram no mês/ano de referência
-  const pendingRefMonth = filterMonth === 'all' ? (now.getMonth() + 1).toString() : filterMonth;
-  const pendingRefYear = filterYear === 'all' ? now.getFullYear().toString() : filterYear;
-
-  // Meses futuros não têm pendentes (ainda não chegaram)
-  const refDate = new Date(parseInt(pendingRefYear), parseInt(pendingRefMonth) - 1, 1);
-  const nowMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const isFuture = refDate > nowMonth;
-
-  const pendingVolunteers = isFuture ? [] : volunteers.filter(v => {
-    return !tithes.some(t => {
-      const d = new Date(t.date + 'T12:00:00');
-      return (
-        t.volunteerId === v.id &&
-        d.getFullYear().toString() === pendingRefYear &&
-        (d.getMonth() + 1).toString() === pendingRefMonth
-      );
-    });
-  });
-  const pendingCount = pendingVolunteers.length;
 
   const formatCurrency = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const recentTithes = [...filteredTithes]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5)
-    .map(t => {
-      const v = volunteers.find(vol => vol.id === t.volunteerId);
-      return { ...t, volunteerName: v?.name || 'Desconhecido', volunteerContact: v?.contact };
-    });
-
-  // --- Desempenho de Coordenadores ---
   const leadersPerformance = leaders.map(l => {
     const activeVisitors = visitors.filter(v => v.assigned_leader_id === l.id);
     return {
       ...l,
       visitorsCount: activeVisitors.length,
-      // Lista de visitantes com seus bairros reais (para o mapa filtrar por zona corretamente)
-      visitorsDetail: activeVisitors.map(v => ({
-        id: v.id,
-        name: v.name,
-        neighborhood: v.neighborhood || null
-      }))
+      visitorsDetail: activeVisitors.map(v => ({ id: v.id, name: v.name, neighborhood: v.neighborhood || null }))
     };
   }).sort((a, b) => b.visitorsCount - a.visitorsCount);
 
-  // --- Taxa de Resposta ---
   const totalVisitors = visitors.length;
   const confirmedVisitors = visitors.filter(v => v.followup_status === 'confirmed').length;
   const responseRate = totalVisitors > 0 ? ((confirmedVisitors / totalVisitors) * 100).toFixed(1) : 0;
 
-
-  /* ── dropdown button style helper ─────────────────────── */
   const dropBtn = (key) => ({
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
-    padding: '0.45rem 0.9rem',
-    background: dropdownOpen === key ? 'var(--primary-light)' : 'var(--surface)',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem',
+    padding: '0.4rem 0.8rem',
+    background: dropdownOpen === key ? 'var(--primary-light)' : '#f8fafc',
     border: `1.5px solid ${dropdownOpen === key ? 'var(--primary)' : 'var(--border-color)'}`,
-    borderRadius: '12px',
+    borderRadius: '10px',
     cursor: 'pointer',
-    fontSize: '0.875rem',
-    fontWeight: 600,
+    fontSize: '0.8rem',
+    fontWeight: 700,
     color: dropdownOpen === key ? 'var(--primary-dark)' : 'var(--text-dark)',
-    boxShadow: dropdownOpen === key ? '0 0 0 3px var(--primary-light)' : '0 1px 2px rgba(0,0,0,0.05)',
-    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+    transition: 'all 0.2s',
     whiteSpace: 'nowrap',
   });
 
   const dropPanel = {
     position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: '100%', zIndex: 1000,
-    background: 'var(--surface)',
-    border: '1.5px solid var(--primary)',
-    borderRadius: '12px',
-    boxShadow: '0 8px 24px rgba(59,130,246,0.15)',
-    padding: '0.35rem',
-    maxHeight: '220px', overflowY: 'auto',
-    animation: 'fadeIn 0.15s ease-out',
+    background: 'white', border: '1px solid var(--border-color)', borderRadius: '14px',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.1)', padding: '0.4rem',
+    maxHeight: '220px', overflowY: 'auto', animation: 'fadeIn 0.2s ease-out',
   };
 
-  const dropItem = (active) => ({
-    padding: '0.5rem 0.75rem', cursor: 'pointer', borderRadius: '8px',
-    fontSize: '0.875rem',
-    fontWeight: active ? 600 : 400,
-    background: active ? 'var(--primary-light)' : 'transparent',
-    color: active ? 'var(--primary-dark)' : 'var(--text-dark)',
-    transition: 'background 0.15s',
-  });
-
   return (
-    <div className="animate-fade-in dashboard-main-wrapper" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {/* ── Header ── */}
-      <div className="dashboard-header" style={{ flexShrink: 0, marginBottom: '0.5rem' }}>
-        <div style={{ minWidth: 0 }}>
-          <h2 className="text-xl" style={{ margin: 0 }}>Dashboard</h2>
-          <p className="text-muted" style={{ fontSize: '0.8rem', margin: 0 }}>Visão geral da Chama Church</p>
+    <div className="animate-fade-in" style={{ 
+      display: 'flex', flexDirection: 'column', 
+      height: 'calc(100vh - 95px)', 
+      overflow: 'hidden', padding: '0.5rem 0.75rem', boxSizing: 'border-box',
+      gap: '0.5rem'
+    }}>
+      
+      {/* HEADER PREMIUM DASHBOARD - SUPER COMPACT */}
+      <div style={{ 
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+        background: 'white', padding: '0.4rem 1rem', borderRadius: '16px', 
+        boxShadow: '0 4px 15px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)', 
+        flexShrink: 0 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ 
+            width: '32px', height: '32px', borderRadius: '8px', 
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+          }}>
+            <LayoutDashboard size={18} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Dashboard</h2>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} ref={dropdownRef}>
-
-            {/* Month */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '0.4rem', borderRadius: '16px', gap: '0.5rem' }} ref={dropdownRef}>
+            {/* Filter Month */}
             <div style={{ position: 'relative' }}>
-              <button style={{ ...dropBtn('month'), minWidth: '140px' }}
-                onClick={() => setDropdownOpen(dropdownOpen === 'month' ? null : 'month')}>
+              <button style={dropBtn('month')} onClick={() => setDropdownOpen(dropdownOpen === 'month' ? null : 'month')}>
                 <span>{months.find(m => m.value === filterMonth)?.label}</span>
-                <ChevronDown size={16} style={{
-                  color: dropdownOpen === 'month' ? 'var(--primary)' : 'var(--text-muted)',
-                  transition: 'transform 0.25s ease',
-                  transform: dropdownOpen === 'month' ? 'rotate(180deg)' : 'rotate(0deg)',
-                  flexShrink: 0,
-                }} />
+                <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: dropdownOpen === 'month' ? 'rotate(180deg)' : '0' }} />
               </button>
               {dropdownOpen === 'month' && (
                 <div style={dropPanel}>
                   {months.map(m => (
-                    <div key={m.value}
-                      style={dropItem(filterMonth === m.value)}
-                      onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}
-                      onMouseOver={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
-                      onMouseOut={e => { if (filterMonth !== m.value) e.currentTarget.style.background = 'transparent'; }}
-                    >{m.label}</div>
+                    <div key={m.value} className="dropdown-item" 
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer', background: filterMonth === m.value ? 'var(--primary-light)' : 'transparent', color: filterMonth === m.value ? 'var(--primary-dark)' : 'var(--text-dark)', fontWeight: filterMonth === m.value ? 700 : 500 }}
+                      onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}>{m.label}</div>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* Year */}
+            {/* Filter Year */}
             <div style={{ position: 'relative' }}>
-              <button style={{ ...dropBtn('year'), minWidth: '90px' }}
-                onClick={() => setDropdownOpen(dropdownOpen === 'year' ? null : 'year')}>
-                <span>{years.find(y => y.value === filterYear)?.label}</span>
-                <ChevronDown size={16} style={{
-                  color: dropdownOpen === 'year' ? 'var(--primary)' : 'var(--text-muted)',
-                  transition: 'transform 0.25s ease',
-                  transform: dropdownOpen === 'year' ? 'rotate(180deg)' : 'rotate(0deg)',
-                  flexShrink: 0,
-                }} />
+              <button style={dropBtn('year')} onClick={() => setDropdownOpen(dropdownOpen === 'year' ? null : 'year')}>
+                <span>{filterYear}</span>
+                <ChevronDown size={16} style={{ transition: 'transform 0.2s', transform: dropdownOpen === 'year' ? 'rotate(180deg)' : '0' }} />
               </button>
               {dropdownOpen === 'year' && (
                 <div style={dropPanel}>
                   {years.map(y => (
-                    <div key={y.value}
-                      style={dropItem(filterYear === y.value)}
-                      onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}
-                      onMouseOver={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'rgba(59,130,246,0.06)'; }}
-                      onMouseOut={e => { if (filterYear !== y.value) e.currentTarget.style.background = 'transparent'; }}
-                    >{y.label}</div>
+                    <div key={y.value} className="dropdown-item"
+                      style={{ padding: '0.5rem 0.8rem', borderRadius: '8px', fontSize: '0.85rem', cursor: 'pointer', background: filterYear === y.value ? 'var(--primary-light)' : 'transparent', color: filterYear === y.value ? 'var(--primary-dark)' : 'var(--text-dark)', fontWeight: filterYear === y.value ? 700 : 500 }}
+                      onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}>{y.label}</div>
                   ))}
                 </div>
               )}
             </div>
           </div>
 
-          <Link to="/tithes" className="btn btn-primary hide-mobile" style={{ flexShrink: 0 }}>
-            Registrar Contribuição
+          <div style={{ height: '32px', width: '1.5px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
+
+          <Link to="/tithes" style={{ 
+            padding: '0.5rem 1rem', borderRadius: '10px', background: 'var(--primary)', 
+            color: 'white', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none',
+            display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 10px rgba(59,130,246,0.2)',
+            transition: 'all 0.2s'
+          }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+            <Plus size={16} />
+            Contribuição
           </Link>
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <div className="dashboard-grid" style={{ flexShrink: 0, marginBottom: '1rem' }}>
-
-        {/* Membros Ativos */}
-        <div className="card stat-card">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-muted mb-1 text-sm">Membros Ativos</p>
-              <h3 className="text-2xl">{members.length + volunteers.length}</h3>
-            </div>
-            <div style={{ background: '#dfe8ff', width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: 'var(--secondary)' }}>
-              <Users size={24} />
-            </div>
-          </div>
-          <div className="text-sm text-muted flex items-center gap-1">
-            <span>Membros e Voluntários consolidados</span>
-          </div>
-        </div>
-
-        {/* Visitantes */}
-        <div className="card stat-card">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-muted mb-1 text-sm">Visitantes</p>
-              <h3 className="text-2xl">{visitors.length}</h3>
-            </div>
-            <div style={{ background: 'var(--primary-light)', width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: 'var(--primary)' }}>
-              <UserPlus size={24} />
-            </div>
-          </div>
-          <div className="text-sm text-muted flex items-center gap-1">
-            <span>Sendo acompanhados</span>
-          </div>
-        </div>
-
-        {/* Fila de Espera */}
-        <div className="card stat-card">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-muted mb-1 text-sm">Fila de Espera</p>
-              <h3 className="text-2xl">{visitors.filter(v => !v.assigned_leader_id).length}</h3>
-            </div>
-            <div style={{ background: '#fef3c7', width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#d97706' }}>
-              <Clock size={24} />
-            </div>
-          </div>
-          <div className="text-sm text-muted flex items-center gap-1">
-            <span>Aguardando coordenador</span>
-          </div>
-        </div>
-
-        {/* Coordenadores */}
-        <div className="card stat-card">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="text-muted mb-1 text-sm">Coordenadores</p>
-              <h3 className="text-2xl">{leaders.length}</h3>
-            </div>
-            <div style={{ background: '#e0e7ff', width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: '#4f46e5' }}>
-              <Shield size={24} />
-            </div>
-          </div>
-          <div className="text-sm text-muted flex items-center gap-1">
-            <span>Coordenando áreas</span>
-          </div>
-        </div>
-
-        {/* Total Arrecadado */}
-        <div className="card stat-card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-muted mb-1 text-sm">Arrecadação</p>
-              <h3 className="text-2xl" style={{ color: 'var(--primary-dark)' }}>{formatCurrency(totalTithes)}</h3>
-            </div>
-            <div style={{ background: 'var(--primary-light)', width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', color: 'var(--primary-dark)' }}>
-              <DollarSign size={24} />
-            </div>
-          </div>
-          {tendency ? (
-            <div className="text-sm flex items-center gap-1">
-              {tendency.isPositive ? (
-                <TrendingUp size={16} color="#16a34a" />
-              ) : (
-                <TrendingDown size={16} color="#dc2626" />
+      {/* STAT CARDS SECTION */}
+      <div style={{ 
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '1.25rem', flexShrink: 0, marginBottom: '0.75rem'
+      }}>
+        {[
+          { label: 'Membros Ativos', val: members.length + volunteers.length, sub: 'Membros', icon: <Users size={18} />, color: '#3b82f6', bg: '#eff6ff' },
+          { label: 'Visitantes', val: visitors.length, sub: 'Visitantes', icon: <UserPlus size={18} />, color: '#8b5cf6', bg: '#f5f3ff' },
+          { label: 'Fila de Espera', val: visitors.filter(v => !v.assigned_leader_id).length, sub: 'Fila', icon: <Clock size={18} />, color: '#f59e0b', bg: '#fffbeb' },
+          { label: 'Coordenadores', val: leaders.length, sub: 'Líderes', icon: <Shield size={18} />, color: '#10b981', bg: '#ecfdf5' },
+          { label: 'Arrecadação', val: formatCurrency(totalTithes), sub: tendency ? `${tendency.percent}%` : 'Mês', icon: <DollarSign size={18} />, color: '#0ea5e9', bg: '#f0f9ff', isCurrency: true }
+        ].map((card, idx) => (
+          <div key={idx} className="card" style={{ 
+            padding: '0.75rem 1rem', borderRadius: '16px', background: 'white', border: '1px solid var(--border-color)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+            cursor: 'default', height: '100%'
+          }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.05)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.15rem', minWidth: 0 }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: card.bg, color: card.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {React.cloneElement(card.icon, { size: 14 })}
+              </div>
+              <p style={{ margin: 0, fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.label}</p>
+              {card.isCurrency && tendency && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', color: tendency.isPositive ? '#059669' : '#dc2626', fontSize: '0.6rem', fontWeight: 700 }}>
+                  {tendency.isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                  {tendency.percent}%
+                </div>
               )}
-              <span style={{ color: tendency.isPositive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                {tendency.isPositive ? '+' : '-'}{tendency.percent}%
-              </span>
-              <span className="text-muted ml-1" style={{ fontSize: '0.75rem' }}>{tendency.text}</span>
             </div>
-          ) : (
-            <div className="text-sm text-muted flex items-center gap-1">
-              <DollarSign size={16} color="var(--primary)" />
-              <span style={{ color: 'var(--primary)' }}>Arrecadação total</span>
-            </div>
-          )}
-        </div>
+
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em', flexShrink: 0 }}>{card.val}</h3>
+          </div>
+        ))}
       </div>
 
-      {/* ── Bottom Section: Map and Animated Banners ── */}
-      <div style={{ marginTop: '0.5rem', display: 'grid', gridTemplateColumns: '1fr 320px', gap: '0.75rem', flex: 1, minHeight: '380px', marginBottom: '0.5rem' }} className="map-and-banners-grid">
-        {/* Mapa de Consolidação */}
-        <div style={{ minWidth: 0, height: '100%', overflow: 'hidden', borderRadius: '16px' }}>
+      {/* MAP AND ANALYTICS SECTION - ULTRA COMPACT */}
+      <div style={{ 
+        display: 'grid', gridTemplateColumns: '1fr 300px', gap: '0.75rem', flex: 1, minHeight: 0
+      }}>
+        {/* MAP CARD */}
+        <div style={{ minWidth: 0, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
           <ManausMap leadersPerformance={leadersPerformance} allowedZones={mapAllowedZones} />
         </div>
 
-        {/* Banners Laterais */}
-        <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: '1.25rem', height: '100%' }}>
-
-          {/* Banner 1: Taxa de Resposta (Donut Chart) */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', background: '#fff', border: '1px solid var(--border-color)', overflow: 'hidden', height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#334155', margin: 0 }}>Visitantes</h3>
-              <div style={{ color: '#94a3b8', cursor: 'pointer' }}>
-                <Users size={18} />
-              </div>
-            </div>
-
-            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* SIDEBAR ANALYTICS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: 0 }}>
+          
+          {/* TAXA DE RESPOSTA CHART */}
+          <div className="card" style={{ padding: '0.5rem 0.75rem', borderRadius: '24px', background: 'white', border: '1px solid var(--border-color)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 0 }}>
+            <h3 style={{ margin: '0 0 0.15rem 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>Taxa de Resposta</h3>
+            <div style={{ display: 'flex', justifyContent: 'center', flex: 1, alignItems: 'center' }}>
               <Chart
                 type="donut"
-                width="220"
+                width="140"
                 series={[confirmedVisitors, totalVisitors - confirmedVisitors - (visitors.filter(v => v.followup_status === 'denied').length), visitors.filter(v => v.followup_status === 'denied').length]}
                 options={{
                   labels: ['Confirmados', 'Pendentes', 'Recusados'],
                   colors: ['#10b981', '#3b82f6', '#ef4444'],
-                  chart: {
-                    animations: { enabled: true, easing: 'easeinout', speed: 800 },
-                    sparkline: { enabled: false }
-                  },
+                  chart: { animations: { enabled: true, speed: 800 } },
                   stroke: { show: false },
                   dataLabels: { enabled: false },
                   legend: { show: false },
@@ -437,24 +305,18 @@ const Dashboard = () => {
                           show: true,
                           name: {
                             show: true,
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: '#64748b',
-                            offsetY: -10,
-                            formatter: () => 'Taxa'
-                          },
-                          value: {
-                            show: true,
-                            fontSize: '22px',
-                            fontWeight: 700,
+                            fontSize: '24px',
+                            fontWeight: 900,
                             color: '#1e293b',
-                            offsetY: 10,
+                            offsetY: 8,
                             formatter: () => `${responseRate}%`
                           },
+                          value: { show: false },
                           total: {
                             show: true,
-                            label: 'Taxa',
-                            formatter: () => `${responseRate}%`
+                            showAlways: true,
+                            label: `${responseRate}%`,
+                            formatter: () => ''
                           }
                         }
                       }
@@ -464,147 +326,69 @@ const Dashboard = () => {
                 }}
               />
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid #f1f5f9', marginTop: '1rem', paddingTop: '1rem' }}>
-              <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Confir.</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem', paddingTop: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
+              {[
+                { label: 'Conf.', val: confirmedVisitors, color: '#10b981' },
+                { label: 'Pend.', val: totalVisitors - confirmedVisitors - (visitors.filter(v => v.followup_status === 'denied').length), color: '#3b82f6' },
+                { label: 'Recu.', val: visitors.filter(v => v.followup_status === 'denied').length, color: '#ef4444' }
+              ].map((s, idx) => (
+                <div key={idx} style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '2px' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.color }} />
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>{s.label}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{s.val}</div>
                 </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{confirmedVisitors}</div>
-              </div>
-              <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }} />
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Pend.</span>
-                </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{totalVisitors - confirmedVisitors - (visitors.filter(v => v.followup_status === 'denied').length)}</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>Recus.</span>
-                </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'denied').length}</div>
-              </div>
+              ))}
             </div>
           </div>
 
-
-
-          {/* Banner 2: Visitantes Ativos (Transactions Style) */}
-          <div className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', background: '#fff', border: '1px solid var(--border-color)', overflow: 'hidden', height: '100%' }}>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexShrink: 0 }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#334155', margin: 0 }}>Visitantes Ativos</h3>
-              <Link to="/visitors" style={{ fontSize: '0.85rem', color: '#94a3b8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                Ver Tudo <ChevronRight size={14} />
+          {/* VISITANTES ATIVOS LIST */}
+          <div className="card" style={{ padding: '0.75rem 1rem', borderRadius: '24px', background: 'white', border: '1px solid var(--border-color)', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-dark)', letterSpacing: '-0.02em' }}>Visitantes Ativos</h3>
+              <Link to="/visitors" style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                Ver todos <ChevronRight size={12} />
               </Link>
             </div>
-
-
-            <CyclingList
-              items={visitors.filter(v => v.followup_status === 'confirmed').sort((a, b) => new Date(b.created_at) - new Date(a.created_at))}
-              renderItem={(v) => {
-                const leader = leaders.find(l => l.id === v.assigned_leader_id);
-                const nameParts = v.name.trim().split(' ');
-                const initials = (nameParts[0]?.[0] || '') + (nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '');
-                
-                return (
-                  <div key={v.id} style={{
-                    padding: '0.75rem 0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.85rem',
-                    flexShrink: 0,
-                    borderBottom: '1px solid #f8fafc'
-                  }}>
-                    {/* Avatar Circular Menor para ganhar espaço */}
-                    <div style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      borderRadius: '50%', 
-
-                      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      color: '#166534',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}>
-
-                      {initials.toUpperCase()}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#1e293b', lineHeight: '1.2' }}>
-                        {v.name}
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <CyclingList
+                items={visitors.filter(v => v.followup_status === 'confirmed').sort((a, b) => new Date(b.created_at) - new Date(a.created_at))}
+                renderItem={(v) => {
+                  const leader = leaders.find(l => l.id === v.assigned_leader_id);
+                  const initials = v.name.trim().split(' ').map(n => n[0]).filter((_, i, a) => i === 0 || i === a.length - 1).join('').toUpperCase();
+                  return (
+                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.4rem 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0 }}>
+                        {initials}
                       </div>
-
-                      <div style={{ display: 'flex', marginTop: '2px' }}>
-                        <div style={{ 
-                          fontSize: '0.75rem', 
-                          color: '#94a3b8', 
-                          fontWeight: 500,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}>
-                          <Shield size={10} flexShrink={0} />
-                          {leader ? leader.name : 'SEM COORD'}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-dark)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Shield size={10} /> {leader?.name || 'Sem líder'}
                         </div>
-
-
-
                       </div>
-
-
-                    </div>
-
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
-                        {v.neighborhood ? (v.neighborhood.length > 10 ? v.neighborhood.substring(0, 10) + '...' : v.neighborhood) : 'S/B'}
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', background: '#f8fafc', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                        {v.neighborhood ? (v.neighborhood.length > 8 ? v.neighborhood.substring(0, 8) + '...' : v.neighborhood) : '—'}
                       </div>
                     </div>
-
-                  </div>
-                );
-              }}
-            />
+                  );
+                }}
+              />
+            </div>
           </div>
-
-
 
         </div>
       </div>
 
       <style>{`
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.5); opacity: 0.5; }
-          100% { transform: scale(1); opacity: 1; }
-        }
+        .dropdown-item:hover { background: #f1f5f9 !important; }
+        .dashboard-main-wrapper { scrollbar-width: none; -ms-overflow-style: none; }
+        .dashboard-main-wrapper::-webkit-scrollbar { display: none; }
         @media (max-width: 1200px) {
-          .map-and-banners-grid {
-            grid-template-columns: 1fr !important;
-            height: auto !important;
-            min-height: auto !important;
-          }
-          .map-and-banners-grid > div:first-child {
-            height: 400px !important;
-          }
-          .map-and-banners-grid > div:last-child {
-            height: auto !important;
-          }
+          .map-and-analytics-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-
     </div>
   );
 };
