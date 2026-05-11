@@ -3,7 +3,7 @@ export const MANAUS_NEIGHBORHOODS_TO_ZONES = {
   "Águas Claras": "Zona Norte",
   "Boas Novas": "Zona Norte",
   "Campo Dourado": "Zona Norte",
-  "Carlos Braga": "Zona Norte",
+
   "Cidade de Deus": "Zona Norte",
   "Cidade Nova": "Zona Norte",
   "Núcleo 1": "Zona Norte",
@@ -52,7 +52,7 @@ export const MANAUS_NEIGHBORHOODS_TO_ZONES = {
   "Riacho Doce": "Zona Norte",
   "Ribeiro Júnior": "Zona Norte",
   "Santa Etelvina": "Zona Norte",
-  "Viver Melhor": "Zona Norte",
+
   "Viver Melhor I": "Zona Norte",
   "Viver Melhor II": "Zona Norte",
   "Viver Melhor III": "Zona Norte",

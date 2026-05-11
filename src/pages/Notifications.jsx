@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useChurch } from '../context/ChurchContext';
 import { supabase } from '../lib/supabase';
-import { Bell, Send, CheckCircle, AlertCircle, Loader2, Calendar, ChevronDown, Search, X, Users, Clock, RefreshCw, UserCheck, Radio, Upload, Smartphone } from 'lucide-react';
+import { Bell, Send, CheckCircle, AlertCircle, Loader2, Calendar, ChevronDown, Search, X, Users, Clock, RefreshCw, UserCheck, Radio, Upload, Smartphone, MessageSquare, Settings, Zap } from 'lucide-react';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bulk-notify`;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -34,6 +34,7 @@ const Notifications = ({ defaultTab = 'pending' }) => {
   const [qrCode, setQrCode] = useState(null);
   const [loadingConn, setLoadingConn] = useState(false);
   const [showConnModal, setShowConnModal] = useState(false);
+  const [churchSettings, setChurchSettings] = useState({ cnpj: '', pix_key: '' });
 
   // Bulk Send States (agora via Edge Function)
   const [isBulkSending, setIsBulkSending] = useState(false);
@@ -45,6 +46,7 @@ const Notifications = ({ defaultTab = 'pending' }) => {
   const [sendInterval, setSendInterval] = useState(5); // Segundos entre mensagens
   const [currentJobId, setCurrentJobId] = useState(null);
   const pollingRef = useRef(null);
+  const stopSignal = useRef(false);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState('default');
   const [searchVolunteer, setSearchVolunteer] = useState('');
@@ -79,6 +81,23 @@ const Notifications = ({ defaultTab = 'pending' }) => {
     }
   };
 
+  const handleSaveConfig = async (field, value) => {
+    if (!activeChurch?.id) return;
+    try {
+      const { error } = await supabase.from('church_settings').upsert({
+        church_id: activeChurch.id,
+        [field]: value,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'church_id' });
+
+      if (error) throw error;
+      showToast('Configuração salva!', 'success');
+    } catch (e) {
+      console.error(`Erro ao salvar ${field}:`, e);
+      showToast('Erro ao salvar configuração.', 'error');
+    }
+  };
+
   const fetchSettings = async () => {
     if (!activeChurch?.id) return;
     try {
@@ -90,6 +109,10 @@ const Notifications = ({ defaultTab = 'pending' }) => {
       if (list?.[0]?.evolution_instance) {
         instance = list[0].evolution_instance;
         apiKey = list[0].evolution_apikey || '';
+        setChurchSettings({
+          cnpj: list[0].cnpj || '',
+          pix_key: list[0].pix_key || ''
+        });
       } else {
         const churchSlug = activeChurch?.name
           ? activeChurch.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '_').replace(/__+/g, '_')
@@ -247,7 +270,7 @@ const Notifications = ({ defaultTab = 'pending' }) => {
 
     setConfirmModal({
       visible: true,
-      message: `Deseja iniciar o envio em massa para ${toSend.length} voluntários via servidor? O envio continuará mesmo se você fechar o navegador.`,
+      message: `Deseja iniciar o envio em massa para ${toSend.length} voluntários?`,
       onConfirm: async () => {
         setConfirmModal({ visible: false, message: '', onConfirm: null });
         await executeBulkSend(toSend);
@@ -262,12 +285,17 @@ const Notifications = ({ defaultTab = 'pending' }) => {
     setBulkFailed(0);
 
     try {
-      const volunteersPayload = toSend.map(v => ({
-        id: v.id,
-        name: v.name,
-        contact: v.contact,
-        message: formatMessage(currentTemplate.text, v),
-      }));
+      const volunteersPayload = toSend.map(v => {
+        const rawNumber = v.contact.replace(/\D/g, '');
+        const formattedNumber = rawNumber.startsWith('55') ? rawNumber : `55${rawNumber}`;
+        return {
+          id: v.id,
+          name: v.name,
+          contact: formattedNumber,
+          number: formattedNumber,
+          message: formatMessage(currentTemplate.text, v),
+        };
+      });
 
       const response = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
@@ -281,7 +309,12 @@ const Notifications = ({ defaultTab = 'pending' }) => {
           filterYear,
           sendInterval,
           evolution_instance: evolutionInstance,
-          evolution_apikey: evolutionApiKey || import.meta.env.VITE_EVOLUTION_API_KEY
+          evolution_apikey: evolutionApiKey || import.meta.env.VITE_EVOLUTION_API_KEY,
+          evolution_base_url: import.meta.env.VITE_EVOLUTION_API_URL,
+          instance: evolutionInstance,
+          apikey: evolutionApiKey || import.meta.env.VITE_EVOLUTION_API_KEY,
+          baseUrl: import.meta.env.VITE_EVOLUTION_API_URL,
+          template_text: currentTemplate.text
         })
       });
 
@@ -293,7 +326,6 @@ const Notifications = ({ defaultTab = 'pending' }) => {
 
       setCurrentJobId(data.jobId);
       showToast(`Job iniciado no servidor! ID: ${data.jobId.slice(0, 8)}...`, 'success');
-
       startPolling(data.jobId);
 
     } catch (err) {
@@ -325,9 +357,9 @@ const Notifications = ({ defaultTab = 'pending' }) => {
           setSelectedVolIds([]);
 
           if (job.status === 'completed') {
-            showToast(`Envio concluido! ${job.sent} enviados, ${job.failed} falhas.`, 'success');
+            showToast(`Envio concluído! ${job.sent} enviados, ${job.failed} falhas.`, 'success');
           } else if (job.status === 'cancelled') {
-            showToast('Envio cancelado pelo usuário.', 'error');
+            showToast('Envio interrompido.', 'warning');
           } else {
             showToast('Erro no processo de envio.', 'error');
           }
@@ -503,156 +535,174 @@ const Notifications = ({ defaultTab = 'pending' }) => {
   }, [evolutionInstance, evolutionApiKey]);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0 }}>
-        <div>
-          <h2 className="text-2xl" style={{ marginBottom: '0.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Bell size={24} className="text-primary" />
-            Notificações
-          </h2>
-          <p className="text-muted" style={{ fontSize: '0.82rem' }}>Gestão de avisos e lembretes via WhatsApp</p>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: '1.25rem' }}>
+      
+      {/* HEADER PREMIUM */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '1.5rem 2rem', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+            <Bell size={28} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Notificações de Voluntários</h2>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Gestão de avisos e lembretes via WhatsApp</p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* WhatsApp Status Button */}
           <button
             onClick={() => setShowConnModal(true)}
-            className="btn btn-outline"
-            style={{ padding: '0.4rem 0.8rem', borderRadius: '10px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'var(--surface)' }}
+            style={{ 
+              padding: '0.6rem 1.25rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700, 
+              display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc',
+              border: '1.5px solid var(--border-color)', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
           >
-            <Send size={16} className={connectionStatus === 'open' ? 'text-success' : 'text-danger'} />
+            <Send size={18} className={connectionStatus === 'open' ? 'text-success' : 'text-danger'} />
             <span>WhatsApp</span>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: connectionStatus === 'open' ? '#22c55e' : (connectionStatus === 'checking' ? '#3b82f6' : '#ef4444'), boxShadow: connectionStatus === 'open' ? '0 0 8px rgba(34,197,94,0.5)' : 'none' }}></div>
           </button>
 
-          <div style={{ height: '24px', width: '1px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
+          <div style={{ height: '32px', width: '1.5px', background: 'var(--border-color)', margin: '0 0.5rem' }}></div>
 
-          <div style={{ display: 'flex', background: 'var(--surface)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '0' }}>
-            <button
-              onClick={() => setActiveTab('pending')}
-              style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'pending' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'pending' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
-            >
-              Lista
-            </button>
-            <button
-              onClick={() => setActiveTab('mass')}
-              style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'mass' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'mass' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
-            >
-              Envio em Massa
-            </button>
-            <button
-              onClick={() => setActiveTab('templates')}
-              style={{ padding: '0.4rem 1rem', borderRadius: '8px', border: 'none', background: activeTab === 'templates' ? 'var(--primary-light)' : 'transparent', color: activeTab === 'templates' ? 'var(--primary-dark)' : 'var(--text-muted)', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.85rem' }}
-            >
-              Modelos
-            </button>
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '0.4rem', borderRadius: '16px', gap: '0.25rem' }}>
+            {[
+              { id: 'pending', label: 'Lista', icon: <Clock size={18} /> },
+              { id: 'mass', label: 'Envio em Massa', icon: <Users size={18} /> },
+              { id: 'templates', label: 'Modelos', icon: <MessageSquare size={18} /> },
+              { id: 'settings', label: 'Configurações', icon: <Settings size={18} /> }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.75rem 1.5rem', borderRadius: '12px', border: 'none',
+                  background: activeTab === tab.id ? 'white' : 'transparent',
+                  color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
+                  fontWeight: 600, cursor: 'pointer', transition: '0.2s',
+                  boxShadow: activeTab === tab.id ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+                }}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
           </div>
-
-          {(activeTab === 'pending' || activeTab === 'mass') && (
-            <>
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setDropdownOpen(dropdownOpen === 'month' ? null : 'month')}
-                  className="btn btn-outline"
-                  style={{ minWidth: '140px', justifyContent: 'space-between' }}
-                >
-                  {months.find(m => m.value === filterMonth)?.label}
-                  <ChevronDown size={16} style={{ transform: dropdownOpen === 'month' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                </button>
-                {dropdownOpen === 'month' && (
-                  <div className="dropdown-menu" style={{ position: 'absolute', top: '100%', left: 0, marginTop: '5px', zIndex: 100, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem', boxShadow: 'var(--shadow-lg)', width: '100%', maxHeight: '200px', overflowY: 'auto' }}>
-                    {months.map(m => (
-                      <button
-                        key={m.value}
-                        onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}
-                        style={{ width: '100%', textAlign: 'left', padding: '0.5rem', borderRadius: '4px', background: filterMonth === m.value ? 'var(--primary-light)' : 'transparent', color: filterMonth === m.value ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer' }}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setDropdownOpen(dropdownOpen === 'year' ? null : 'year')}
-                  className="btn btn-outline"
-                  style={{ minWidth: '100px', justifyContent: 'space-between' }}
-                >
-                  {filterYear}
-                  <ChevronDown size={16} style={{ transform: dropdownOpen === 'year' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                </button>
-                {dropdownOpen === 'year' && (
-                  <div className="dropdown-menu" style={{ position: 'absolute', top: '100%', left: 0, marginTop: '5px', zIndex: 100, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.5rem', boxShadow: 'var(--shadow-lg)', width: '100%' }}>
-                    {years.map(y => (
-                      <button
-                        key={y.value}
-                        onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}
-                        style={{ width: '100%', textAlign: 'left', padding: '0.5rem', borderRadius: '4px', background: filterYear === y.value ? 'var(--primary-light)' : 'transparent', color: filterYear === y.value ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer' }}
-                      >
-                        {y.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="card" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* CONTEÚDO DINÂMICO POR ABA */}
+      <div style={{ flex: 1, overflowY: activeTab === 'templates' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: 0 }}>
 
+
+      {/* Content */}
         {activeTab === 'pending' && (
-          <>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', flexWrap: 'wrap', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+          <div className="animate-slide-up card" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, borderRadius: '24px' }}>
+            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   Pendentes em {months.find(m => m.value === filterMonth)?.label}
-                  <span className="badge badge-blue" style={{ marginLeft: '0.75rem' }}>{pendingVolunteers.length}</span>
+                  <span className="badge badge-blue" style={{ fontSize: '0.85rem', padding: '0.3rem 0.8rem', borderRadius: '10px' }}>{pendingVolunteers.length}</span>
                 </span>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid var(--border-color)', padding: '0.4rem 0.75rem', borderRadius: '10px', background: 'var(--bg-color)' }}>
-                  <Search size={16} className="text-muted" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                   {/* Filtro de Mês */}
+                   <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setDropdownOpen(dropdownOpen === 'month' ? null : 'month')}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', 
+                        background: 'white', border: '1.5px solid var(--border-color)', borderRadius: '12px',
+                        fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer'
+                      }}
+                    >
+                      {months.find(m => m.value === filterMonth)?.label}
+                      <ChevronDown size={14} style={{ transform: dropdownOpen === 'month' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                    </button>
+                    {dropdownOpen === 'month' && (
+                      <div style={{ position: 'absolute', top: '110%', left: 0, width: '160px', background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, maxHeight: '200px', overflowY: 'auto', padding: '0.4rem' }}>
+                        {months.map(m => (
+                          <button
+                            key={m.value}
+                            onClick={() => { setFilterMonth(m.value); setDropdownOpen(null); }}
+                            style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: '8px', background: filterMonth === m.value ? 'var(--primary-light)' : 'transparent', color: filterMonth === m.value ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: filterMonth === m.value ? 700 : 500 }}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtro de Ano */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setDropdownOpen(dropdownOpen === 'year' ? null : 'year')}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', 
+                        background: 'white', border: '1.5px solid var(--border-color)', borderRadius: '12px',
+                        fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer'
+                      }}
+                    >
+                      {filterYear}
+                      <ChevronDown size={14} style={{ transform: dropdownOpen === 'year' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                    </button>
+                    {dropdownOpen === 'year' && (
+                      <div style={{ position: 'absolute', top: '110%', left: 0, width: '100px', background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, padding: '0.4rem' }}>
+                        {years.map(y => (
+                          <button
+                            key={y.value}
+                            onClick={() => { setFilterYear(y.value); setDropdownOpen(null); }}
+                            style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: '8px', background: filterYear === y.value ? 'var(--primary-light)' : 'transparent', color: filterYear === y.value ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: filterYear === y.value ? 700 : 500 }}
+                          >
+                            {y.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1.5px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: '14px', background: 'white', width: '280px' }}>
+                  <Search size={18} className="text-muted" />
                   <input
                     type="text"
                     placeholder="Pesquisar voluntário..."
                     value={searchVolunteer}
                     onChange={(e) => setSearchVolunteer(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.85rem', width: '200px' }}
+                    style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', width: '100%', fontWeight: 500 }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>MODELO:</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>MODELO:</span>
                 <div style={{ position: 'relative' }}>
                   <button
                     onClick={() => setDropdownOpen(dropdownOpen === 'template' ? null : 'template')}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      padding: '0.45rem 0.9rem',
-                      background: dropdownOpen === 'template' ? 'var(--primary-light)' : 'var(--surface)',
+                      display: 'flex', alignItems: 'center', gap: '0.75rem',
+                      padding: '0.6rem 1.25rem',
+                      background: 'white',
                       border: `1.5px solid ${dropdownOpen === 'template' ? 'var(--primary)' : 'var(--border-color)'}`,
-                      borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
-                      color: dropdownOpen === 'template' ? 'var(--primary-dark)' : 'var(--text-dark)',
-                      minWidth: '200px', justifyContent: 'space-between', transition: 'all 0.2s'
+                      borderRadius: '14px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700,
+                      color: 'var(--text-dark)',
+                      minWidth: '220px', justifyContent: 'space-between', transition: 'all 0.2s',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                     }}
                   >
                     <span>{currentTemplate.name}</span>
-                    <ChevronDown size={14} style={{ transform: dropdownOpen === 'template' ? 'rotate(180deg)' : 'none', transition: '0.25s' }} />
+                    <ChevronDown size={16} style={{ transform: dropdownOpen === 'template' ? 'rotate(180deg)' : 'none', transition: '0.25s' }} />
                   </button>
                   {dropdownOpen === 'template' && (
-                    <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '6px', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', zIndex: 100, minWidth: '100%', padding: '0.35rem', animation: 'fadeIn 0.15s ease-out' }}>
+                    <div style={{ position: 'absolute', top: '110%', right: 0, width: '100%', background: 'white', border: '1px solid var(--border-color)', borderRadius: '14px', boxShadow: 'var(--shadow-xl)', zIndex: 100, padding: '0.4rem', animation: 'fadeIn 0.15s ease-out' }}>
                       {templates.filter(t => t.id !== 'welcome' && t.id !== 'tithe_receipt').map(t => (
                         <button
                           key={t.id}
                           onClick={() => { setSelectedTemplateId(t.id); setDropdownOpen(null); }}
-                          style={{ width: '100%', padding: '0.5rem 0.75rem', textAlign: 'left', background: selectedTemplateId === t.id ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: selectedTemplateId === t.id ? 600 : 400, color: selectedTemplateId === t.id ? 'var(--primary-dark)' : 'var(--text-dark)', transition: '0.15s' }}
-                          onMouseOver={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'var(--bg-color)'; }}
-                          onMouseOut={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'transparent'; }}
+                          style={{ width: '100%', padding: '0.75rem 1rem', textAlign: 'left', background: selectedTemplateId === t.id ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: selectedTemplateId === t.id ? 700 : 500, color: selectedTemplateId === t.id ? 'var(--primary-dark)' : 'var(--text-dark)', transition: '0.15s' }}
                         >
                           {t.name}
                         </button>
@@ -662,6 +712,7 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                 </div>
               </div>
             </div>
+
 
             <div className="table-container" style={{ flex: 1, overflowY: 'auto', border: 'none', borderRadius: 0 }}>
               {isFutureMonth ? (
@@ -741,158 +792,168 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {activeTab === 'mass' && (
-          <div style={{ padding: '1.5rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflow: 'hidden' }}>
+          <div style={{ padding: 0, height: '100%', display: 'flex', gap: '1.5rem', overflow: 'hidden' }}>
             <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
-              <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
-
-                <div style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--surface)', textAlign: 'center' }}>
-                  <div style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              
+              {/* Sidebar de Configuração de Envio */}
+              <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                
+                <div style={{ padding: '2rem 1.5rem', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'white', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                  <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', width: '64px', height: '64px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', transform: 'rotate(-5deg)' }}>
                     <Send size={32} />
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Envio em Massa</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                    Selecione os voluntários na lista ao lado para disparar as mensagens automáticas.
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>Envio em Massa</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, margin: 0 }}>
+                    Selecione os destinatários para disparar as notificações automáticas via servidor.
                   </p>
                 </div>
 
-                <div style={{ padding: '1.25rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--surface)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Público-alvo:</label>
-                      <div style={{ position: 'relative' }}>
-                        <select
-                          value={targetAudience}
-                          onChange={(e) => {
-                            setTargetAudience(e.target.value);
-                            setSelectedVolIds([]); // Limpa a seleção ao mudar o filtro
-                          }}
-                          style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, outline: 'none', cursor: 'pointer', color: 'var(--text-dark)' }}
-                        >
-                          <option value="pending">Voluntários Pendentes</option>
-                          <option value="paid">Dizimistas (Já Contribuíram)</option>
-                          <option value="all">Todos os Voluntários</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Modelo de Mensagem:</label>
-                      <div style={{ position: 'relative' }}>
-                        <button
-                          onClick={() => setDropdownOpen(dropdownOpen === 'mass-template' ? null : 'mass-template')}
-                          style={{ width: '100%', padding: '0.6rem 0.75rem', background: dropdownOpen === 'mass-template' ? 'var(--primary-light)' : 'var(--bg-color)', border: `1.5px solid ${dropdownOpen === 'mass-template' ? 'var(--primary)' : 'var(--border-color)'}`, borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', color: dropdownOpen === 'mass-template' ? 'var(--primary-dark)' : 'var(--text-dark)', transition: 'all 0.2s' }}
-                        >
-                          {currentTemplate.name}
-                          <ChevronDown size={14} style={{ transform: dropdownOpen === 'mass-template' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                        </button>
-                        {dropdownOpen === 'mass-template' && (
-                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '5px', zIndex: 200, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.35rem', boxShadow: 'var(--shadow-lg)' }}>
-                            {templates.map(t => (
-                              <button
-                                key={t.id}
-                                onClick={() => { setSelectedTemplateId(t.id); setDropdownOpen(null); }}
-                                style={{ width: '100%', padding: '0.6rem 0.75rem', textAlign: 'left', background: selectedTemplateId === t.id ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: selectedTemplateId === t.id ? 700 : 400, color: selectedTemplateId === t.id ? 'var(--primary-dark)' : 'var(--text-dark)', cursor: 'pointer', transition: '0.15s' }}
-                                onMouseOver={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'var(--bg-color)'; }}
-                                onMouseOut={e => { if (selectedTemplateId !== t.id) e.currentTarget.style.background = 'transparent'; }}
-                              >
-                                {t.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'block' }}>Intervalo de Envio:</label>
-                      <div style={{ position: 'relative' }}>
-                        <button
-                          onClick={() => setDropdownOpen(dropdownOpen === 'interval' ? null : 'interval')}
-                          style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                        >
-                          {sendInterval} segundos
-                          <ChevronDown size={14} style={{ transform: dropdownOpen === 'interval' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                        </button>
-                        {dropdownOpen === 'interval' && (
-                          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '5px', zIndex: 100, background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.35rem', boxShadow: 'var(--shadow-lg)' }}>
-                            {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => (
-                              <button
-                                key={val}
-                                onClick={() => { setSendInterval(val); setDropdownOpen(null); }}
-                                style={{ width: '100%', padding: '0.5rem', textAlign: 'left', background: sendInterval === val ? 'var(--primary-light)' : 'transparent', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: sendInterval === val ? 600 : 400, color: sendInterval === val ? 'var(--primary-dark)' : 'var(--text-dark)', cursor: 'pointer' }}
-                              >
-                                {val} segundos
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '0.75rem', background: 'rgba(34,197,94,0.05)', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.1)' }}>
-                      <p style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 500, lineHeight: 1.4 }}>
-                        Intervalo recomendado para evitar bloqueios automáticos.
-                      </p>
+                <div style={{ padding: '1.5rem', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'white', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Público-alvo:</label>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setDropdownOpen(dropdownOpen === 'target' ? null : 'target')}
+                        style={{
+                          width: '100%', padding: '0.75rem 1rem', background: 'white',
+                          border: `1.5px solid ${dropdownOpen === 'target' ? 'var(--primary)' : 'var(--border-color)'}`,
+                          borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700,
+                          color: 'var(--text-dark)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s'
+                        }}
+                      >
+                        <span>
+                          {targetAudience === 'pending' ? 'Voluntários Pendentes' : 
+                           targetAudience === 'paid' ? 'Dizimistas (Já Contribuíram)' : 
+                           'Todos os Voluntários'}
+                        </span>
+                        <ChevronDown size={16} style={{ transform: dropdownOpen === 'target' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                      </button>
+                      {dropdownOpen === 'target' && (
+                        <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, padding: '0.4rem' }}>
+                          {[
+                            { value: 'pending', label: 'Voluntários Pendentes' },
+                            { value: 'paid', label: 'Dizimistas (Já Contribuíram)' },
+                            { value: 'all', label: 'Todos os Voluntários' }
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => { setTargetAudience(opt.value); setSelectedVolIds([]); setDropdownOpen(null); }}
+                              style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: '8px', background: targetAudience === opt.value ? 'var(--primary-light)' : 'transparent', color: targetAudience === opt.value ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: targetAudience === opt.value ? 700 : 500 }}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                {isBulkSending ? (
-                  <div style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--surface)', border: '1px solid var(--border-color)' }}>
-                    {/* Badge: rodando no servidor */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', padding: '0.5rem 0.75rem', background: 'rgba(59,130,246,0.06)', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.15)' }}>
-                      <Loader2 size={14} className="animate-spin" style={{ color: 'var(--primary)' }} />
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-dark)' }}>Rodando no servidor — pode fechar o navegador</span>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Modelo de Mensagem:</label>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setDropdownOpen(dropdownOpen === 'mass-template' ? null : 'mass-template')}
+                        style={{
+                          width: '100%', padding: '0.75rem 1rem', background: 'white',
+                          border: `1.5px solid ${dropdownOpen === 'mass-template' ? 'var(--primary)' : 'var(--border-color)'}`,
+                          borderRadius: '12px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700,
+                          color: 'var(--text-dark)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s'
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentTemplate.name}</span>
+                        <ChevronDown size={16} style={{ transform: dropdownOpen === 'mass-template' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                      </button>
+                      {dropdownOpen === 'mass-template' && (
+                        <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, padding: '0.4rem', maxHeight: '200px', overflowY: 'auto' }}>
+                          {templates.filter(t => t.id !== 'welcome' && t.id !== 'tithe_receipt').map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => { setSelectedTemplateId(t.id); setDropdownOpen(null); }}
+                              style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: '8px', background: selectedTemplateId === t.id ? 'var(--primary-light)' : 'transparent', color: selectedTemplateId === t.id ? 'var(--primary-dark)' : 'inherit', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: selectedTemplateId === t.id ? 700 : 500 }}
+                            >
+                              {t.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                      <span>Progresso</span>
-                      <span>{bulkProgress} / {bulkTotal}</span>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Intervalo (segundos):</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <input 
+                        type="range" min="1" max="60" 
+                        value={sendInterval} 
+                        onChange={(e) => setSendInterval(parseInt(e.target.value))}
+                        style={{ flex: 1, accentColor: 'var(--primary)' }}
+                      />
+                      <span style={{ fontWeight: 800, color: 'var(--primary)', minWidth: '35px', fontSize: '0.9rem' }}>{sendInterval}s</span>
                     </div>
-                    <div style={{ width: '100%', height: '10px', background: 'var(--bg-color)', borderRadius: '10px', overflow: 'hidden' }}>
-                      <div style={{ width: `${bulkTotal > 0 ? (bulkProgress / bulkTotal) * 100 : 0}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.6s ease' }}></div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-                      <div style={{ flex: 1, padding: '0.5rem', background: 'rgba(34,197,94,0.06)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(34,197,94,0.15)' }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#16a34a' }}>{bulkProgress - bulkFailed}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>ENVIADOS</div>
+                  </div>
+
+                  {isBulkSending ? (
+                    <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '16px', border: '1.5px solid var(--primary-light)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <Loader2 size={18} className="animate-spin text-primary" />
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary-dark)' }}>Processando envio...</span>
                       </div>
-                      <div style={{ flex: 1, padding: '0.5rem', background: 'rgba(239,68,68,0.06)', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(239,68,68,0.15)' }}>
-                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#dc2626' }}>{bulkFailed}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>FALHAS</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 800 }}>
+                        <span>Progresso</span>
+                        <span>{bulkProgress} / {bulkTotal}</span>
                       </div>
+                      <div style={{ width: '100%', height: '10px', background: '#e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div style={{ width: `${bulkTotal > 0 ? (bulkProgress / bulkTotal) * 100 : 0}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.6s ease' }}></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                        <div style={{ flex: 1, padding: '0.75rem', background: '#f0fdf4', borderRadius: '12px', textAlign: 'center', border: '1px solid #bbf7d0' }}>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#16a34a' }}>{bulkProgress - bulkFailed}</div>
+                          <div style={{ fontSize: '0.6rem', color: '#16a34a', fontWeight: 800, textTransform: 'uppercase' }}>Sucesso</div>
+                        </div>
+                        <div style={{ flex: 1, padding: '0.75rem', background: '#fef2f2', borderRadius: '12px', textAlign: 'center', border: '1px solid #fecaca' }}>
+                          <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#dc2626' }}>{bulkFailed}</div>
+                          <div style={{ fontSize: '0.6rem', color: '#dc2626', fontWeight: 800, textTransform: 'uppercase' }}>Falhas</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleBulkCancel}
+                        style={{ marginTop: '1.25rem', width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem', background: '#fee2e2', color: '#dc2626', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <X size={16} /> Parar Envio
+                      </button>
                     </div>
+                  ) : (
                     <button
-                      onClick={handleBulkCancel}
-                      className="btn btn-danger"
-                      style={{ marginTop: '1.25rem', width: '100%', padding: '0.75rem', borderRadius: '12px', fontSize: '0.85rem' }}
+                      onClick={startBulkSend}
+                      disabled={selectedVolIds.length === 0}
+                      style={{ 
+                        padding: '1rem', fontSize: '1rem', fontWeight: 800, gap: '0.75rem', borderRadius: '16px', 
+                        background: 'var(--primary)', color: 'white', border: 'none', cursor: 'pointer',
+                        boxShadow: '0 8px 20px rgba(59,130,246,0.3)', transition: 'all 0.2s',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: selectedVolIds.length === 0 ? 0.6 : 1
+                      }}
+                      onMouseEnter={e => { if (selectedVolIds.length > 0) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { if (selectedVolIds.length > 0) e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
-                      <X size={16} /> Solicitar Cancelamento
+                      <Send size={20} /> Iniciar para {selectedVolIds.length}
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={startBulkSend}
-                    className="btn btn-primary"
-                    style={{ padding: '1rem', fontSize: '0.95rem', fontWeight: 700, gap: '0.75rem', borderRadius: '16px', boxShadow: '0 4px 12px rgba(59,130,246,0.25)' }}
-                    disabled={selectedVolIds.length === 0}
-                  >
-                    <Send size={18} /> Iniciar para {selectedVolIds.length} selecionados
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
 
-              {/* Volunteer list with checkboxes */}
-              <div style={{ flex: 1, background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Lista de Destinatários com Checkboxes */}
+              <div className="card" style={{ flex: 1, borderRadius: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
+                <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <input
                         type="checkbox"
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                         checked={pendingVolunteers.filter(v => v.contact).length > 0 && selectedVolIds.length === pendingVolunteers.filter(v => v.contact).length}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -902,27 +963,26 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                           }
                         }}
                       />
-                      <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>Selecionar Todos</span>
+                      <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Selecionar Todos</span>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      {selectedVolIds.length} de {pendingVolunteers.filter(v => v.contact).length} disponíveis
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, background: 'white', padding: '0.3rem 0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                      {selectedVolIds.length} / {pendingVolunteers.filter(v => v.contact).length} disponíveis
                     </span>
                   </div>
 
-                  {/* Search Input for Mass Sending */}
-                  <div style={{ position: 'relative' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <div style={{ position: 'relative', width: '280px' }}>
+                    <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                       type="text"
-                      placeholder="Pesquisar voluntário na lista..."
+                      placeholder="Filtrar por nome..."
                       value={searchMassVolunteer}
                       onChange={(e) => setSearchMassVolunteer(e.target.value)}
-                      style={{ width: '100%', padding: '0.6rem 0.75rem 0.6rem 2.5rem', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem', outline: 'none' }}
+                      style={{ width: '100%', padding: '0.6rem 1rem 0.6rem 2.75rem', background: 'white', border: '1.5px solid var(--border-color)', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
                     />
                   </div>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+                <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.5rem' }}>
                   {(() => {
                     const filtered = pendingVolunteers.filter(v =>
                       v.contact &&
@@ -931,7 +991,7 @@ const Notifications = ({ defaultTab = 'pending' }) => {
 
                     if (filtered.length > 0) {
                       return (
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
                           {filtered.map(vol => (
                             <div
                               key={vol.id}
@@ -940,20 +1000,22 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                                 setSelectedVolIds(prev => prev.includes(vol.id) ? prev.filter(id => id !== vol.id) : [...prev, vol.id]);
                               }}
                               style={{
-                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.85rem 1rem', borderRadius: '10px', cursor: 'pointer', transition: '0.2s',
-                                background: selectedVolIds.includes(vol.id) ? 'rgba(59,130,246,0.04)' : 'transparent',
-                                border: `1px solid ${selectedVolIds.includes(vol.id) ? 'rgba(59,130,246,0.1)' : 'transparent'}`
+                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s',
+                                background: selectedVolIds.includes(vol.id) ? 'var(--primary-light)' : 'white',
+                                border: `1.5px solid ${selectedVolIds.includes(vol.id) ? 'var(--primary)' : 'var(--border-color)'}`,
+                                boxShadow: selectedVolIds.includes(vol.id) ? '0 4px 12px rgba(59,130,246,0.1)' : 'none'
                               }}
                             >
-                              <input
-                                type="checkbox"
-                                checked={selectedVolIds.includes(vol.id)}
-                                readOnly
-                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                              />
+                              <div style={{ 
+                                width: '20px', height: '20px', borderRadius: '6px', border: '2px solid var(--border-color)', 
+                                background: selectedVolIds.includes(vol.id) ? 'var(--primary)' : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                              }}>
+                                {selectedVolIds.includes(vol.id) && <CheckCircle size={14} color="white" />}
+                              </div>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{vol.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{vol.contact}</div>
+                                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: selectedVolIds.includes(vol.id) ? 'var(--primary-dark)' : 'var(--text-dark)' }}>{vol.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{vol.contact}</div>
                               </div>
                             </div>
                           ))}
@@ -961,9 +1023,9 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                       );
                     } else {
                       return (
-                        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                          <Search size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
-                          <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Nenhum voluntário encontrado.</p>
+                        <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          <Users size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+                          <p style={{ fontSize: '1rem', fontWeight: 700 }}>Nenhum voluntário encontrado para os filtros atuais.</p>
                         </div>
                       );
                     }
@@ -977,12 +1039,12 @@ const Notifications = ({ defaultTab = 'pending' }) => {
 
 
         {activeTab === 'templates' && (
-          <div style={{ display: 'flex', height: '100%', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', background: 'var(--surface)', margin: '0 0.5rem' }}>
-            {/* Sidebar de Modelos */}
-            <div style={{ width: '280px', borderRight: '1px solid var(--border-color)', background: 'var(--bg-color)', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Meus Modelos</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Escolha um modelo para editar</p>
+          <div className="animate-slide-up" style={{ display: 'flex', flex: 1, border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', background: 'white' }}>
+            {/* SIDEBAR DE MODELOS */}
+            <div style={{ width: '280px', borderRight: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+              <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'white' }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, color: 'var(--text-dark)' }}>Meus Modelos</h3>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '0.1rem 0 0' }}>Selecione para editar</p>
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem' }}>
                 {templates.map(t => (
@@ -990,22 +1052,14 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                     key={t.id}
                     onClick={() => setSelectedTemplateId(t.id)}
                     style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '10px',
-                      border: 'none',
-                      textAlign: 'left',
-                      marginBottom: '0.5rem',
-                      cursor: 'pointer',
-                      transition: 'var(--transition)',
+                      width: '100%', padding: '1rem', borderRadius: '12px', border: 'none', textAlign: 'left', marginBottom: '0.35rem',
+                      cursor: 'pointer', transition: '0.2s',
                       background: selectedTemplateId === t.id ? 'var(--primary)' : 'transparent',
                       color: selectedTemplateId === t.id ? 'white' : 'var(--text-dark)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.25rem'
+                      display: 'flex', flexDirection: 'column', gap: '0.25rem'
                     }}
                   >
-                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{t.name}</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '-0.01em' }}>{t.name}</span>
                     <span style={{ fontSize: '0.7rem', opacity: selectedTemplateId === t.id ? 0.8 : 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {t.text}
                     </span>
@@ -1014,31 +1068,34 @@ const Notifications = ({ defaultTab = 'pending' }) => {
               </div>
             </div>
 
-            {/* Area do Editor */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2rem', minHeight: 0 }}>
+            {/* AREA DO EDITOR */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2rem', background: 'white', overflowY: 'auto' }}>
               {(() => {
                 const template = templates.find(t => t.id === selectedTemplateId) || templates[0];
                 return (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                       <div>
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{template.name}</h4>
+                        <h4 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>{template.name}</h4>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ID: {template.id}</span>
                       </div>
 
                       <div style={{ position: 'relative' }}>
                         <button
-                          className="btn btn-primary"
                           onClick={() => setDropdownOpen(dropdownOpen === 'vars' ? null : 'vars')}
-                          style={{ gap: '0.5rem', padding: '0.5rem 1rem' }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 1.25rem',
+                            background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px',
+                            fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
+                          }}
                         >
-                          <Send size={16} style={{ transform: 'rotate(-45deg)' }} />
+                          <Zap size={16} />
                           Inserir Variável
-                          <ChevronDown size={14} />
+                          <ChevronDown size={14} style={{ transform: dropdownOpen === 'vars' ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
                         </button>
 
                         {dropdownOpen === 'vars' && (
-                          <div style={{ position: 'absolute', top: '110%', right: 0, width: '220px', background: 'var(--surface)', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 100, padding: '0.5rem' }}>
+                          <div style={{ position: 'absolute', top: '110%', right: 0, width: '220px', background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: 'var(--shadow-xl)', zIndex: 100, padding: '0.5rem', animation: 'slideInUp 0.2s ease-out' }}>
                             {[
                               { label: 'Nome do Voluntário', var: '{{nome}}' },
                               { label: 'Mês de Referência', var: '{{mes}}' },
@@ -1053,11 +1110,12 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                                   updateTemplateText(template.id, template.text + ' ' + v.var);
                                   setDropdownOpen(null);
                                 }}
-                                style={{ width: '100%', padding: '0.6rem 0.75rem', border: 'none', background: 'transparent', textAlign: 'left', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-dark)', transition: 'background 0.2s' }}
-                                onMouseEnter={(e) => e.target.style.background = 'var(--bg-color)'}
+                                style={{ width: '100%', padding: '0.7rem 0.85rem', border: 'none', background: 'transparent', textAlign: 'left', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-dark)', transition: 'background 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                onMouseEnter={(e) => e.target.style.background = '#f1f5f9'}
                                 onMouseLeave={(e) => e.target.style.background = 'transparent'}
                               >
-                                {v.label} <code style={{ fontSize: '0.7rem', color: 'var(--primary)', float: 'right' }}>{v.var}</code>
+                                <span>{v.label}</span>
+                                <code style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700 }}>{v.var}</code>
                               </button>
                             ))}
                           </div>
@@ -1065,22 +1123,27 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                       </div>
                     </div>
 
-                    <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                       <textarea
                         value={template.text}
                         onChange={(e) => updateTemplateText(template.id, e.target.value)}
                         placeholder="Escreva sua mensagem aqui..."
-                        style={{ flex: 1, width: '100%', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '1rem', fontFamily: 'Inter, sans-serif', resize: 'none', background: 'var(--bg-color)', outline: 'none', transition: 'border-color 0.2s', lineHeight: '1.6' }}
+                        style={{ 
+                          flex: 1, minHeight: '200px', width: '100%', padding: '1.5rem', 
+                          borderRadius: '20px', border: '2px solid var(--border-color)', 
+                          fontSize: '1rem', fontFamily: 'inherit', resize: 'none', 
+                          background: '#f8fafc', outline: 'none', transition: 'all 0.2s', lineHeight: '1.6' 
+                        }}
                         onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                         onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
                       />
 
-                      <div style={{ background: 'var(--primary-light)', padding: '1rem', borderRadius: '12px', border: '1px dashed var(--primary)' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--primary-dark)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <CheckCircle size={14} />
+                      <div style={{ background: '#f0f9ff', padding: '1.5rem', borderRadius: '20px', border: '1px dashed #3b82f6' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.75rem', color: '#0369a1', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <CheckCircle size={16} />
                           PRÉ-VISUALIZAÇÃO (EXEMPLO)
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-dark)', whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                        <div style={{ fontSize: '0.95rem', color: 'var(--text-dark)', whiteSpace: 'pre-wrap', fontStyle: 'italic', lineHeight: '1.6' }}>
                           {formatMessage(template.text, volunteers[0] || { name: 'João Silva', departmentIds: [] })}
                         </div>
                       </div>
@@ -1091,13 +1154,14 @@ const Notifications = ({ defaultTab = 'pending' }) => {
             </div>
           </div>
         )}
+
         {activeTab === 'settings' && (
           <div className="animate-slide-up" style={{ flex: 1, minHeight: '500px' }}>
             <div className="card" style={{ padding: '2rem', borderRadius: '24px', background: 'white', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Settings2 size={20} color="var(--primary)" />
+                    <Settings size={20} color="var(--primary)" />
                     Dados da Igreja
                   </h3>
                   
@@ -1117,8 +1181,9 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                       <input 
                         type="text" 
                         placeholder="00.000.000/0000-00"
+                        onChange={(e) => setChurchSettings(prev => ({ ...prev, cnpj: e.target.value }))}
                         onBlur={(e) => handleSaveConfig('cnpj', e.target.value)}
-                        defaultValue={volunteers?.[0]?.church_settings?.cnpj || ''}
+                        value={churchSettings.cnpj}
                         style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 'none' }}
                       />
                     </div>
@@ -1127,8 +1192,9 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                       <input 
                         type="text" 
                         placeholder="Chave para dízimos"
+                        onChange={(e) => setChurchSettings(prev => ({ ...prev, pix_key: e.target.value }))}
                         onBlur={(e) => handleSaveConfig('pix_key', e.target.value)}
-                        defaultValue={volunteers?.[0]?.church_settings?.pix_key || ''}
+                        value={churchSettings.pix_key}
                         style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', outline: 'none' }}
                       />
                     </div>

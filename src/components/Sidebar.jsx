@@ -262,7 +262,7 @@ const Sidebar = () => {
       icon: <Bell size={20} />, 
       mobileHidden: true,
       children: [
-        { name: 'Geral', path: '/notifications' },
+        { name: 'Voluntários', path: '/notifications' },
         { name: 'Visitantes', path: '/notifications/visitantes' },
       ]
     },
@@ -406,6 +406,7 @@ const Sidebar = () => {
                       <NavLink
                         key={child.path}
                         to={child.path}
+                        end
                         style={({ isActive }) => ({
                           display: 'flex', alignItems: 'center', gap: '0.75rem',
                           padding: '0.6rem 1rem', borderRadius: '12px',
