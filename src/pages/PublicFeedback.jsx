@@ -6,6 +6,9 @@ import logoImg from '../assets/cc-logo.webp';
 
 const PublicFeedback = () => {
   const { churchId } = useParams();
+  const searchParams = new URLSearchParams(window.location.search);
+  const visitorId = searchParams.get('visitor_id');
+
   const [config, setConfig] = useState({
     title: 'Pesquisa CHAMA CHURCH',
     description: 'Olá, seja bem-vindo(a)! Queremos saber a sua opinião sobre sua experiência conosco.',
@@ -44,14 +47,20 @@ const PublicFeedback = () => {
 
       let resolvedChurchId = selectedChurchId;
 
-      // Se não for um UUID padrão (contém '-'), tenta resolver como slug (ex: "cidade-nova" ou "ponta-negra")
-      if (selectedChurchId && selectedChurchId.length < 30) {
-        const slugStr = selectedChurchId.toLowerCase().replace(/-/g, ' ');
-        const matched = churchesData?.find(c => c.name.toLowerCase().includes(slugStr));
+      // Se não for um UUID válido (36 caracteres), tenta resolver como slug
+      if (selectedChurchId && selectedChurchId.length !== 36) {
+        const urlSlug = selectedChurchId.toLowerCase().trim();
+        const matched = churchesData?.find(c => {
+          const churchSlug = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          return churchSlug === urlSlug;
+        });
+        
         if (matched) {
           resolvedChurchId = matched.id;
-          // Opcional: Atualiza o form.church_id silenciosamente
           setSelectedChurchId(matched.id);
+        } else {
+          // Se não encontrou pelo slug, evita quebrar a query com um valor inválido para UUID
+          resolvedChurchId = null;
         }
       }
 
@@ -98,7 +107,8 @@ const PublicFeedback = () => {
     try {
       const { error } = await supabase.from('feedbacks').insert({
         ...form,
-        church_id: selectedChurchId
+        church_id: selectedChurchId,
+        visitor_id: visitorId || null
       });
 
       if (error) throw error;

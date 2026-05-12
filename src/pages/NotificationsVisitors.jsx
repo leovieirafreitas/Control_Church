@@ -110,14 +110,20 @@ const NotificationsVisitors = () => {
 
   const formatPreview = (text) => {
     if (!text) return '';
+    let churchSlug = 'sede';
+    if (activeChurch?.name) {
+      churchSlug = activeChurch.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+    
     return text
       .replace(/{{nome}}/g, 'João Silva')
       .replace(/{{video}}/g, sundayVideoUrl || 'https://link.com/video')
       .replace(/{{telefone}}/g, '(92) 98888-7777')
       .replace(/{{bairro}}/g, 'Centro')
-      .replace(/{{unidade}}/g, 'Chama Church Sede')
+      .replace(/{{unidade}}/g, activeChurch?.name || 'Chama Church Sede')
       .replace(/{{coordenador}}/g, 'Pr. Marcos')
-      .replace(/{{confirmar}}/g, 'https://chama.app/confirm/123');
+      .replace(/{{confirmar}}/g, 'https://chama.app/confirm/123')
+      .replace(/{{feedback}}/g, `https://chamachurch.com.br/pesquisa/${churchSlug}?visitor_id=exemplo-id-123`);
   };
 
   const visitorTemplates = [
@@ -129,7 +135,8 @@ const NotificationsVisitors = () => {
       setText: setSundayMsg,
       vars: [
         { label: 'Nome do Visitante', var: '{{nome}}' },
-        { label: 'Link do Vídeo', var: '{{video}}' }
+        { label: 'Link do Vídeo', var: '{{video}}' },
+        { label: 'Link de Feedback', var: '{{feedback}}' }
       ],
       premium: `Olá, {{nome}}! 👋\nQue alegria ter você conosco recentemente! ✨\n\nPreparamos um vídeo especial de boas-vindas para você. Assista aqui:\n{{video}}\n\nSeja muito bem-vindo(a) à nossa família! 🔥🙏`
     },
@@ -387,7 +394,19 @@ const NotificationsVisitors = () => {
 
         // ── MODO VISITANTES (Envia para Visitante + Coordenador) ──
         if (mode === 'visitors' || mode === 'auto') {
-          const msg = (sundayMsg || '').replace(/{{nome}}/g, v.name || 'Visitante').replace(/\n/g, '\n');
+          const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+          
+          let churchSlug = activeChurch?.id || '';
+          if (activeChurch?.name) {
+            churchSlug = activeChurch.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          }
+          const feedbackUrl = `${baseUrl}/pesquisa/${churchSlug}?visitor_id=${v.id}`;
+          
+          const msg = (sundayMsg || '')
+            .replace(/{{nome}}/g, v.name || 'Visitante')
+            .replace(/{{feedback}}/g, feedbackUrl)
+            .replace(/\n/g, '\n');
+            
           const okV = await sendWA(v.phone, msg, sundayVideoUrl).catch(() => false);
           if (okV) sent++; else failed++;
 

@@ -137,7 +137,7 @@ const FeedbackDashboard = () => {
     try {
       let query = supabase
         .from('feedbacks')
-        .select('*')
+        .select('*, visitors(name)')
         .gte('created_at', dateRange.start)
         .lte('created_at', `${dateRange.end}T23:59:59`);
       if (activeChurch) { query = query.eq('church_id', activeChurch.id); }
@@ -723,7 +723,7 @@ const FeedbackDashboard = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <span style={{ fontWeight: 700, color: '#334155', fontSize: '1rem' }}>Membro Anônimo</span>
+                          <span style={{ fontWeight: 700, color: '#334155', fontSize: '1rem' }}>{f.visitors?.name ? `Visitante: ${f.visitors.name}` : 'Membro Anônimo'}</span>
                           <span style={{ background: '#f0fdf4', color: '#166534', fontSize: '10px', padding: '3px 10px', borderRadius: '8px', fontWeight: 800, textTransform: 'uppercase' }}>Respondido</span>
                           {f.comments && <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '10px', padding: '3px 10px', borderRadius: '8px', fontWeight: 800, textTransform: 'uppercase' }}>Comentário</span>}
                         </div>
@@ -769,7 +769,7 @@ const FeedbackDashboard = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <span style={{ fontWeight: 700, color: '#334155', fontSize: '1rem' }}>Membro Anônimo</span>
+                      <span style={{ fontWeight: 700, color: '#334155', fontSize: '1rem' }}>{f.visitors?.name ? `Visitante: ${f.visitors.name}` : 'Membro Anônimo'}</span>
                       <span style={{ background: '#f0fdf4', color: '#166534', fontSize: '10px', padding: '3px 10px', borderRadius: '8px', fontWeight: 800, textTransform: 'uppercase' }}>Respondido</span>
                       <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '10px', padding: '3px 10px', borderRadius: '8px', fontWeight: 800, textTransform: 'uppercase' }}>Comentário</span>
                     </div>
