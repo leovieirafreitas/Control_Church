@@ -4,10 +4,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useApp } from '../context/AppContext';
 import logoImg from '../assets/cc-logo-small.png';
-import { 
-  Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, 
-  MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, 
-  CheckCircle, MessageSquare, FileDown 
+import {
+  Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone,
+  MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock,
+  CheckCircle, MessageSquare, FileDown
 } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import Dropdown from '../components/Dropdown';
@@ -51,7 +51,7 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
 
   return ReactDOM.createPortal(
     <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <div className="animate-scale-up" style={{ 
+      <div className="animate-scale-up" style={{
         maxWidth: '450px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
       }}>
@@ -65,27 +65,27 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
         <form onSubmit={handleSubmit} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               autoFocus
               style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
               onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-              value={form.name} 
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} 
-              required 
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              required
             />
           </div>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Telefone / WhatsApp</label>
             <div style={{ position: 'relative' }}>
               <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="(00) 00000-0000"
                 style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
                 onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                value={form.phone} 
-                onChange={handlePhoneChange} 
+                value={form.phone}
+                onChange={handlePhoneChange}
               />
             </div>
           </div>
@@ -113,8 +113,8 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
         </form>
 
         <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
-          <button onClick={handleSubmit} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e=>e.currentTarget.style.background='var(--primary-dark)'} onMouseLeave={e=>e.currentTarget.style.background='var(--primary)'}>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = '#cbd5e1'} onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}>Cancelar</button>
+          <button onClick={handleSubmit} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-dark)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}>
             {saving ? 'Cadastrando...' : <><CheckCircle size={18} /> Cadastrar Visitante</>}
           </button>
         </div>
@@ -161,7 +161,7 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
 
   return ReactDOM.createPortal(
     <div className="modal-overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-      <div className="animate-scale-up" style={{ 
+      <div className="animate-scale-up" style={{
         maxWidth: '450px', width: '95%', backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', maxHeight: '90vh'
       }}>
@@ -175,25 +175,25 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
         <form onSubmit={handleSave} className="custom-scrollbar" style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Nome Completo</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
               onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-              value={form.name} 
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))} 
-              required 
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              required
             />
           </div>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Telefone / WhatsApp</label>
             <div style={{ position: 'relative' }}>
               <Phone size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 2.5rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500' }}
                 onFocus={e => e.target.style.borderColor = 'var(--primary)'} onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-                value={form.phone} 
-                onChange={handlePhoneChange} 
+                value={form.phone}
+                onChange={handlePhoneChange}
               />
             </div>
           </div>
@@ -239,7 +239,7 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
         </form>
 
         <div style={{ padding: '1.25rem 1.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Cancelar</button>
+          <button onClick={onClose} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = '#cbd5e1'} onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}>Cancelar</button>
           <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '0.85rem', borderRadius: '12px', border: 'none', background: 'var(--primary)', fontWeight: '700', color: 'white', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-dark)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}>
             {saving ? 'Salvando...' : <><Save size={18} /> Salvar Alterações</>}
           </button>
@@ -252,12 +252,12 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
 
 /* ─── Página Principal ─────────────────────────────────────── */
 const Visitors = () => {
-  const { 
-    visitors, leaders, addVisitor, updateVisitor, deleteVisitor, 
+  const {
+    visitors, leaders, addVisitor, updateVisitor, deleteVisitor,
     promoteVisitorToMember, visitorSearch, setVisitorSearch, loading,
-    activeChurch 
+    activeChurch
   } = useApp();
-  
+
   // Computar bairros únicos do sistema + mapeamento oficial
   const systemNeighborhoods = React.useMemo(() => {
     const fromMapping = Object.keys(MANAUS_NEIGHBORHOODS_TO_ZONES);
@@ -275,7 +275,20 @@ const Visitors = () => {
   const [showWaitingListOnly, setShowWaitingListOnly] = useState(false);
   const [filterCoordinator, setFilterCoordinator] = useState('all');
   const [filterZone, setFilterZone] = useState('all');
-  const [filterDate, setFilterDate] = useState('');
+  const [filterMonth, setFilterMonth] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+
+  const availableYears = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const y = new Set(visitors.map(v => new Date(v.createdAt).getFullYear()));
+    for (let i = 2026; i <= currentYear + 10; i++) {
+      y.add(i);
+    }
+    return [
+      {value: 'all', label: 'Ano (Todos)'}, 
+      ...Array.from(y).sort((a, b) => a - b).map(year => ({value: year.toString(), label: year.toString()}))
+    ];
+  }, [visitors]);
 
   const filteredVisitors = React.useMemo(() => {
     return visitors
@@ -298,21 +311,26 @@ const Visitors = () => {
         }
 
         let matchesDate = true;
-        if (filterDate) {
-          const visitorDate = new Date(v.createdAt).toISOString().split('T')[0];
-          matchesDate = visitorDate === filterDate;
+        if (filterMonth !== 'all' || filterYear !== 'all') {
+          const vDate = new Date(v.createdAt);
+          if (filterMonth !== 'all') {
+            matchesDate = matchesDate && vDate.getMonth().toString() === filterMonth;
+          }
+          if (filterYear !== 'all') {
+            matchesDate = matchesDate && vDate.getFullYear().toString() === filterYear;
+          }
         }
 
         return matchesSearch && matchesWaitlist && matchesCoordinator && matchesZone && matchesDate;
       })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // Mais recentes primeiro
-  }, [visitors, visitorSearch, showWaitingListOnly, filterCoordinator, filterZone, filterDate]);
+  }, [visitors, visitorSearch, showWaitingListOnly, filterCoordinator, filterZone, filterMonth, filterYear]);
 
   const exportToPDF = () => {
     const doc = new jsPDF();
     const now = new Date().toLocaleDateString('pt-BR');
     const churchName = activeChurch?.name || 'Chama Church';
-    
+
     // --- LOGO ---
     try {
       doc.addImage(logoImg, 'PNG', 160, 10, 35, 12);
@@ -324,23 +342,23 @@ const Visitors = () => {
     doc.setFontSize(22);
     doc.setTextColor(79, 70, 229); // indigo-600
     doc.text('Relatório de Visitantes', 14, 22);
-    
+
     doc.setFontSize(14);
     doc.setTextColor(100, 116, 139); // slate-500
     doc.text(churchName, 14, 30);
-    
+
     doc.setFontSize(10);
     doc.text(`Data de emissão: ${now}`, 14, 36);
-    
+
     doc.setDrawColor(226, 232, 240);
     doc.line(14, 42, 196, 42);
-    
+
     // --- TABELA 1: POR COORDENADOR ---
     const coordStats = leaders.map(leader => {
       const count = visitors.filter(v => v.assigned_leader_id === leader.id).length;
       return [leader.name, count.toString()];
     }).filter(row => parseInt(row[1]) > 0);
-    
+
     // Adiciona fila de espera
     const waitingCount = visitors.filter(v => !v.assigned_leader_id).length;
     if (waitingCount > 0) {
@@ -350,7 +368,7 @@ const Visitors = () => {
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59); // slate-800
     doc.text('1. Visitantes por Coordenador', 14, 50);
-    
+
     autoTable(doc, {
       startY: 55,
       head: [['Coordenador Responsável', 'Total de Visitantes']],
@@ -359,7 +377,7 @@ const Visitors = () => {
       headStyles: { fillColor: [99, 102, 241], fontStyle: 'bold' },
       styles: { fontSize: 10, cellPadding: 5 }
     });
-    
+
     // --- TABELA 2: POR ZONA ---
     const zones = ['Zona Norte', 'Zona Leste', 'Zona Sul', 'Zona Centro-Sul', 'Zona Centro-Oeste', 'Zona Oeste', 'Zona Rural', 'Outros'];
     const zoneStats = zones.map(zone => {
@@ -372,7 +390,7 @@ const Visitors = () => {
 
     const nextY = doc.lastAutoTable.finalY + 15;
     doc.text('2. Distribuição por Zona (Manaus)', 14, nextY);
-    
+
     autoTable(doc, {
       startY: nextY + 5,
       head: [['Zona / Região', 'Total de Visitantes']],
@@ -385,11 +403,11 @@ const Visitors = () => {
     // Rodapé
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
-    for(let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.text(`Página ${i} de ${pageCount}`, 196, 285, { align: 'right' });
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(`Página ${i} de ${pageCount}`, 196, 285, { align: 'right' });
     }
-    
+
     doc.save(`Relatorio_Visitantes_${churchName.replace(/\s+/g, '_')}_${now.replace(/\//g, '-')}.pdf`);
   };
 
@@ -443,14 +461,48 @@ const Visitors = () => {
               fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
               boxShadow: '0 2px 6px rgba(0,0,0,0.06)', transition: 'all 0.2s'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor='#3b82f6'; e.currentTarget.style.color='#3b82f6'; e.currentTarget.style.background='#eff6ff'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor='#e2e8f0'; e.currentTarget.style.color='#475569'; e.currentTarget.style.background='#ffffff'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.color = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = '#ffffff'; }}
           >
             <FileDown size={18} /> Relatório PDF
           </button>
 
-          <div style={{ width: '210px' }}>
-            <DatePicker value={filterDate} onChange={setFilterDate} placeholder="Filtrar por data" />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ width: '130px' }}>
+              <Dropdown
+                variant="pill"
+                value={filterMonth}
+                valueLabel={
+                  filterMonth === 'all' ? 'Mês' : 
+                  ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][parseInt(filterMonth)]
+                }
+                options={[
+                  { value: 'all', label: 'Todos os Meses' },
+                  { value: '0', label: 'Janeiro' },
+                  { value: '1', label: 'Fevereiro' },
+                  { value: '2', label: 'Março' },
+                  { value: '3', label: 'Abril' },
+                  { value: '4', label: 'Maio' },
+                  { value: '5', label: 'Junho' },
+                  { value: '6', label: 'Julho' },
+                  { value: '7', label: 'Agosto' },
+                  { value: '8', label: 'Setembro' },
+                  { value: '9', label: 'Outubro' },
+                  { value: '10', label: 'Novembro' },
+                  { value: '11', label: 'Dezembro' }
+                ]}
+                onSelect={opt => setFilterMonth(opt.value)}
+              />
+            </div>
+            <div style={{ width: '110px' }}>
+              <Dropdown
+                variant="pill"
+                value={filterYear}
+                valueLabel={filterYear === 'all' ? 'Ano' : filterYear}
+                options={availableYears}
+                onSelect={opt => setFilterYear(opt.value)}
+              />
+            </div>
           </div>
 
           <button
@@ -462,8 +514,8 @@ const Visitors = () => {
               fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
               boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px)'}
-            onMouseLeave={e => e.currentTarget.style.transform='translateY(0)'}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
             <UserPlus size={18} /> Novo Visitante
           </button>
@@ -565,14 +617,14 @@ const Visitors = () => {
             <div style={{ minWidth: '185px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderRadius: '20px' }}>
               <Dropdown
                 value={filterCoordinator}
-                valueLabel={filterCoordinator === 'all' 
-                  ? 'Todos Coordenadores' 
+                valueLabel={filterCoordinator === 'all'
+                  ? 'Todos Coordenadores'
                   : (() => {
-                      const l = leaders.find(l => l.id === filterCoordinator);
-                      if (!l) return 'Desconhecido';
-                      const count = visitors.filter(v => v.assigned_leader_id === l.id).length;
-                      return `${l.name} (${count})`;
-                    })()
+                    const l = leaders.find(l => l.id === filterCoordinator);
+                    if (!l) return 'Desconhecido';
+                    const count = visitors.filter(v => v.assigned_leader_id === l.id).length;
+                    return `${l.name} (${count})`;
+                  })()
                 }
                 options={[
                   { value: 'all', label: 'Todos Coordenadores' },
@@ -705,17 +757,17 @@ const Visitors = () => {
       </div>
 
       {editingVisitor && (
-        <EditVisitorModal 
-          visitor={editingVisitor} 
+        <EditVisitorModal
+          visitor={editingVisitor}
           leaders={leaders}
           onSave={updateVisitor}
           neighborhoods={systemNeighborhoods}
-          onClose={() => setEditingVisitor(null)} 
+          onClose={() => setEditingVisitor(null)}
         />
       )}
 
       {showAddModal && (
-        <AddVisitorModal 
+        <AddVisitorModal
           leaders={leaders}
           onSave={addVisitor}
           neighborhoods={systemNeighborhoods}
@@ -749,8 +801,8 @@ const Visitors = () => {
             <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.75rem', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Efetivar Novo Membro!</h3>
             <p className="text-muted" style={{ marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>Você está prestes a converter o visitante *{visitorToPromote?.name}* em um membro oficial da igreja. Deseja prosseguir?</p>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setShowPromoteModal(false)} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.borderColor='#cbd5e1'} onMouseLeave={e=>e.currentTarget.style.borderColor='#e2e8f0'}>Ainda não</button>
-              <button onClick={confirmPromote} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', transition: '0.2s' }} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>Sim, Efetivar!</button>
+              <button onClick={() => setShowPromoteModal(false)} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: '2px solid #e2e8f0', background: 'white', fontWeight: '700', color: 'var(--text-muted)', cursor: 'pointer', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = '#cbd5e1'} onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}>Ainda não</button>
+              <button onClick={confirmPromote} style={{ flex: 1, padding: '1rem', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>Sim, Efetivar!</button>
             </div>
           </div>
         </div>,

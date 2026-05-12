@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
-const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, icon: Icon, renderOption, required = false, size = 'normal' }) => {
+const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, icon: Icon, renderOption, required = false, size = 'normal', variant = 'default' }) => {
   const isSmall = size === 'small';
+  const isPill = variant === 'pill';
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef(null);
@@ -28,8 +29,8 @@ const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, ic
       const shouldOpenUp = spaceBelow < panelHeight && rect.top > panelHeight;
 
       setCoords({
-        top: shouldOpenUp 
-          ? rect.top + window.scrollY - panelHeight - 6 
+        top: shouldOpenUp
+          ? rect.top + window.scrollY - panelHeight - 6
           : rect.bottom + window.scrollY + 6,
         left: rect.left + window.scrollX,
         width: rect.width,
@@ -47,11 +48,12 @@ const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, ic
         onClick={() => setOpen(p => !p)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: isSmall ? '0.5rem' : '0.75rem',
-          padding: isSmall ? '0.4rem 0.75rem' : '0.75rem 1rem', borderRadius: isSmall ? '10px' : '12px',
+          padding: isSmall ? '0.4rem 0.75rem' : (isPill ? '0 1.25rem' : '0.75rem 1rem'),
+          borderRadius: isSmall ? '10px' : (isPill ? '20px' : '12px'),
           border: `1.5px solid ${open ? 'var(--primary)' : 'var(--border-color)'}`,
           background: 'white', cursor: 'pointer', transition: 'all 0.2s',
-          boxShadow: open ? '0 0 0 3px var(--primary-light)' : 'none',
-          minHeight: isSmall ? '36px' : '48px'
+          boxShadow: open ? '0 0 0 3px var(--primary-light)' : (isPill ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'),
+          minHeight: isSmall ? '36px' : (isPill ? '44px' : '48px')
         }}
       >
         {Icon && (
@@ -82,11 +84,11 @@ const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, ic
       </button>
 
       {open && ReactDOM.createPortal(
-        <div 
+        <div
           id="dropdown-portal-panel"
           style={{
-            position: 'absolute', 
-            top: `${coords.top}px`, 
+            position: 'absolute',
+            top: `${coords.top}px`,
             left: `${coords.left}px`,
             width: `${coords.width}px`,
             background: 'white', border: '1px solid var(--border-color)', borderRadius: '12px',
@@ -110,7 +112,7 @@ const Dropdown = ({ label, value, valueLabel, options, onSelect, placeholder, ic
             const optLabel = opt.name || opt.label || opt;
             const labelContent = renderOption ? renderOption(opt) : optLabel;
             const isSelected = optValue === value;
-            
+
             return (
               <button
                 key={i}

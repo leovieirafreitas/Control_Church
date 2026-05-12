@@ -9,7 +9,6 @@ const VisitorConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchVisitor = async () => {
@@ -19,10 +18,10 @@ const VisitorConfirmation = () => {
           .select('*, coordenadores(name)')
           .eq('id', visitorId)
           .single();
-        
+
         if (error) throw error;
         setVisitor(data);
-        
+
         // Se já foi respondido, pula para tela de sucesso
         if (data.followup_status && data.followup_status !== 'pending') {
           setSubmitted(true);
@@ -37,25 +36,27 @@ const VisitorConfirmation = () => {
   }, [visitorId]);
 
   const handleResponse = async (response) => {
-    setIsSubmitting(true);
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('visitors')
         .update({ followup_status: response === 'yes' ? 'confirmed' : 'denied' })
         .eq('id', visitorId);
-      
+
       if (error) throw error;
       setSubmitted(true);
     } catch (err) {
       setError('Erro ao enviar resposta. Tente novamente.');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  if (loading && !submitted) {
+  if (loading && !visitor && !submitted) {
     return (
       <div style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '4px solid #e2e8f0', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -99,43 +100,39 @@ const VisitorConfirmation = () => {
         <h1 style={{ textAlign: 'center', fontWeight: 900, fontSize: '1.75rem', marginBottom: '1.25rem', lineHeight: 1.2, color: 'var(--text-dark)' }}>
           Olá, {visitor.name}!
         </h1>
-        
+
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-          Vimos que você nos visitou recentemente e ficamos muito felizes! <br/><br/>
-          Alguém da nossa Equipe já entrou em contato com você?
+          Vimos que você nos visitou recentemente e ficamos muito felizes! <br /><br />
+          Alguém da nossa <strong>Equipe</strong> já entrou em contato com você?
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <button 
+          <button
             onClick={() => handleResponse('yes')}
-            disabled={isSubmitting}
-            style={{ 
-              padding: '0.85rem', borderRadius: '15px', border: 'none', 
-              background: 'var(--primary)', color: 'white', fontWeight: 900, 
-              fontSize: '1rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: '0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: isSubmitting ? 0.7 : 1
+            style={{
+              padding: '0.85rem', borderRadius: '15px', border: 'none',
+              background: 'var(--primary)', color: 'white', fontWeight: 900,
+              fontSize: '1rem', cursor: 'pointer', transition: '0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}
-            onMouseOver={e => { if (!isSubmitting) e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseOut={e => { if (!isSubmitting) e.currentTarget.style.transform = 'translateY(0)' }}
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            {isSubmitting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : 'SIM'}
+            SIM
           </button>
-          
-          <button 
+
+          <button
             onClick={() => handleResponse('no')}
-            disabled={isSubmitting}
-            style={{ 
-              padding: '0.85rem', borderRadius: '15px', border: '2px solid #e2e8f0', 
-              background: 'white', color: 'var(--text-main)', fontWeight: 800, 
-              fontSize: '1rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: '0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: isSubmitting ? 0.7 : 1
+            style={{
+              padding: '0.85rem', borderRadius: '15px', border: '2px solid #e2e8f0',
+              background: 'white', color: 'var(--text-main)', fontWeight: 800,
+              fontSize: '1rem', cursor: 'pointer', transition: '0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}
-            onMouseOver={e => { if (!isSubmitting) e.currentTarget.style.background = '#f8fafc' }}
-            onMouseOut={e => { if (!isSubmitting) e.currentTarget.style.background = 'white' }}
+            onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
+            onMouseOut={e => e.currentTarget.style.background = 'white'}
           >
-            {isSubmitting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : 'NÃO'}
+            NÃO
           </button>
         </div>
 
