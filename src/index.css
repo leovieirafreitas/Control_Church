@@ -878,7 +878,7 @@ body {
 
 /* Action Buttons for Tables */
 .btn-icon {
-  background: transparent;
+  background: #eff6ff;
   border: none;
   border-radius: 12px;
   width: 36px;
@@ -888,20 +888,27 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-muted);
+  color: #3b82f6;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
 }
 
 .btn-icon:hover {
-  background: var(--bg-color);
-  color: var(--primary);
+  background: #dbeafe;
+  color: #2563eb;
   transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.1);
+}
+
+.btn-icon.danger {
+  background: #fef2f2;
+  color: #ef4444;
 }
 
 .btn-icon.danger:hover {
-  background: var(--danger-light);
-  color: var(--danger);
+  background: #fee2e2;
+  color: #dc2626;
+  box-shadow: 0 4px 6px -1px rgb(239 68 68 / 0.1);
 }
 
 .btn-action-text {

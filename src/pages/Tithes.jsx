@@ -706,9 +706,8 @@ const Tithes = () => {
                           <td><span className="badge badge-blue">Recebido</span></td>
                           <td style={{ textAlign: 'right' }}>
                             <button
-                              className="btn btn-icon"
+                              className="btn-icon danger"
                               onClick={() => handleDeleteClick(tithe)}
-                              style={{ color: 'var(--danger)', padding: '0.25rem' }}
                               title="Excluir"
                             >
                               <Trash2 size={16} />

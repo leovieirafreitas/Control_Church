@@ -572,10 +572,10 @@ const Volunteers = () => {
                     <td style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{new Date(vol.createdAt).toLocaleDateString('pt-BR')}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
-                        <button onClick={() => setEditingVolunteer(vol)} className="btn-icon" title="Editar" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none' }}>
+                        <button onClick={() => setEditingVolunteer(vol)} className="btn-icon" title="Editar">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => handleDeleteClick(vol)} className="btn-icon danger" title="Excluir" style={{ background: '#fef2f2', color: '#ef4444', border: 'none' }}>
+                        <button onClick={() => handleDeleteClick(vol)} className="btn-icon danger" title="Excluir">
                           <Trash2 size={16} />
                         </button>
                       </div>

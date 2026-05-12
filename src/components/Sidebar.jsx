@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Grid, DollarSign, LogOut, Copy, Bell, ChevronDown, Check, Building2, MessageSquare, Settings, X, Clock, Mail, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Network, DollarSign, LogOut, Copy, Bell, ChevronDown, Check, Building2, MessageSquare, Settings, X, Clock, Mail, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChurch } from '../context/ChurchContext';
 import logoImg from '../assets/logo.png';
@@ -254,7 +254,7 @@ const Sidebar = () => {
         { name: 'Coordenadores', path: '/coordenadores' },
       ]
     },
-    { name: 'Departamentos', icon: <Grid size={20} />, path: '/departments' },
+    { name: 'Departamentos', icon: <Network size={20} />, path: '/departments' },
     { name: 'Contribuições', icon: <DollarSign size={20} />, path: '/tithes', mobileHidden: true },
     { 
       id: 'notificacoes',

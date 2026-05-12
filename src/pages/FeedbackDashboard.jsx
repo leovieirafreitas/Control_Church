@@ -891,15 +891,9 @@ const FeedbackDashboard = () => {
                         {!DEFAULT_QUESTION_IDS.includes(q.id) && (
                           <button
                             onClick={() => removeQuestion(i)}
+                            className="btn-icon danger"
                             title="Remover campo"
-                            style={{
-                              background: '#fef2f2', border: 'none', borderRadius: '8px',
-                              width: '30px', height: '30px', display: 'flex', alignItems: 'center',
-                              justifyContent: 'center', cursor: 'pointer', color: '#ef4444',
-                              transition: 'all 0.2s', flexShrink: 0
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                            style={{ width: '32px', height: '32px' }}
                           >
                             <Trash2 size={14} />
                           </button>
