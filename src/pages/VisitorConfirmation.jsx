@@ -9,6 +9,7 @@ const VisitorConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchVisitor = async () => {
@@ -36,7 +37,7 @@ const VisitorConfirmation = () => {
   }, [visitorId]);
 
   const handleResponse = async (response) => {
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('visitors')
@@ -48,15 +49,13 @@ const VisitorConfirmation = () => {
     } catch (err) {
       setError('Erro ao enviar resposta. Tente novamente.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   if (loading && !submitted) {
     return (
       <div style={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '4px solid #e2e8f0', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -90,7 +89,7 @@ const VisitorConfirmation = () => {
 
   return (
     <div style={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: '1rem' }}>
-      <div className="card animate-slide-up" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', background: 'white' }}>
+      <div style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', background: 'white' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
           <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
             <Heart size={32} />
@@ -103,36 +102,40 @@ const VisitorConfirmation = () => {
         
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
           Vimos que você nos visitou recentemente e ficamos muito felizes! <br/><br/>
-          O coordenador <strong>{visitor.coordenadores?.name || 'da sua área'}</strong> já entrou em contato com você?
+          Alguém da nossa Equipe já entrou em contato com você?
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           <button 
             onClick={() => handleResponse('yes')}
+            disabled={isSubmitting}
             style={{ 
               padding: '0.85rem', borderRadius: '15px', border: 'none', 
               background: 'var(--primary)', color: 'white', fontWeight: 900, 
-              fontSize: '1rem', cursor: 'pointer', transition: '0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
+              fontSize: '1rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: '0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: isSubmitting ? 0.7 : 1
             }}
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseOver={e => { if (!isSubmitting) e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseOut={e => { if (!isSubmitting) e.currentTarget.style.transform = 'translateY(0)' }}
           >
-            SIM
+            {isSubmitting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : 'SIM'}
           </button>
           
           <button 
             onClick={() => handleResponse('no')}
+            disabled={isSubmitting}
             style={{ 
               padding: '0.85rem', borderRadius: '15px', border: '2px solid #e2e8f0', 
               background: 'white', color: 'var(--text-main)', fontWeight: 800, 
-              fontSize: '1rem', cursor: 'pointer', transition: '0.2s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
+              fontSize: '1rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: '0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: isSubmitting ? 0.7 : 1
             }}
-            onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
-            onMouseOut={e => e.currentTarget.style.background = 'white'}
+            onMouseOver={e => { if (!isSubmitting) e.currentTarget.style.background = '#f8fafc' }}
+            onMouseOut={e => { if (!isSubmitting) e.currentTarget.style.background = 'white' }}
           >
-            NÃO
+            {isSubmitting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : 'NÃO'}
           </button>
         </div>
 

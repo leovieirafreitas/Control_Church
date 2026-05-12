@@ -423,6 +423,7 @@ const Visitors = () => {
 
   const waitingCount = filteredVisitors.filter(v => !v.assigned_leader_id).length;
   const assignedCount = filteredVisitors.filter(v => v.assigned_leader_id).length;
+  const noContactCount = filteredVisitors.filter(v => v.followup_status === 'denied').length;
 
   return (
     <div className="animate-fade-in flex-container" style={{ padding: '1.5rem 2rem', height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -470,7 +471,7 @@ const Visitors = () => {
       </div>
 
       {/* ── Stats Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
@@ -495,6 +496,17 @@ const Visitors = () => {
           <div>
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fila de Espera</p>
             <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{waitingCount}</h2>
+          </div>
+        </div>
+
+        {/* Sem Contato card */}
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#fef2f2', color: '#dc2626', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <AlertCircle size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sem Contato</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{noContactCount}</h2>
           </div>
         </div>
       </div>
