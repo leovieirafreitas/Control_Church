@@ -353,6 +353,49 @@ const Visitors = () => {
     doc.setDrawColor(226, 232, 240);
     doc.line(14, 42, 196, 42);
 
+    // --- RESUMO DE STATUS (cards) ---
+    const totalVisitors    = visitors.length;
+    const waitingCountPDF  = visitors.filter(v => !v.assigned_leader_id).length;
+    const noContactPDF     = visitors.filter(v => v.followup_status === 'denied').length;
+    const confirmedPDF     = visitors.filter(v => v.followup_status === 'confirmed').length;
+
+    const summaryCards = [
+      { label: 'Total de Visitantes', value: totalVisitors,   color: [59, 130, 246],  bg: [239, 246, 255] },
+      { label: 'Fila de Espera',       value: waitingCountPDF, color: [234, 88, 12],   bg: [255, 247, 237] },
+      { label: 'Sem Contato',          value: noContactPDF,    color: [220, 38, 38],   bg: [254, 242, 242] },
+      { label: 'Confirmados',          value: confirmedPDF,    color: [5, 150, 105],   bg: [236, 253, 245] },
+    ];
+
+    const cardW = 43;
+    const cardH = 22;
+    const cardGap = 4;
+    const cardStartX = 14;
+    const cardY = 48;
+
+    summaryCards.forEach((card, i) => {
+      const x = cardStartX + i * (cardW + cardGap);
+
+      // fundo do card
+      doc.setFillColor(...card.bg);
+      doc.setDrawColor(...card.color);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(x, cardY, cardW, cardH, 3, 3, 'FD');
+
+      // label
+      doc.setFontSize(7);
+      doc.setTextColor(...card.color);
+      doc.setFont(undefined, 'bold');
+      doc.text(card.label.toUpperCase(), x + cardW / 2, cardY + 6.5, { align: 'center' });
+
+      // valor
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(...card.color);
+      doc.text(String(card.value), x + cardW / 2, cardY + 16, { align: 'center' });
+    });
+
+    doc.setLineWidth(0.2);
+
     // --- TABELA 1: POR COORDENADOR ---
     const coordStats = leaders.map(leader => {
       const count = visitors.filter(v => v.assigned_leader_id === leader.id).length;
@@ -367,10 +410,10 @@ const Visitors = () => {
 
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59); // slate-800
-    doc.text('1. Visitantes por Coordenador', 14, 50);
+    doc.text('1. Visitantes por Coordenador', 14, 78);
 
     autoTable(doc, {
-      startY: 55,
+      startY: 83,
       head: [['Coordenador Responsável', 'Total de Visitantes']],
       body: coordStats,
       theme: 'grid',
@@ -523,7 +566,7 @@ const Visitors = () => {
       </div>
 
       {/* ── Stats Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
           borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
@@ -559,6 +602,17 @@ const Visitors = () => {
           <div>
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sem Contato</p>
             <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{noContactCount}</h2>
+          </div>
+        </div>
+
+        {/* Confirmados card */}
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#ecfdf5', color: '#059669', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CheckCircle size={28} />
+          </div>
+          <div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirmados</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{filteredVisitors.filter(v => v.followup_status === 'confirmed').length}</h2>
           </div>
         </div>
       </div>
