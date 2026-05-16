@@ -480,26 +480,23 @@ const Visitors = () => {
   if (loading) return <div className="p-8 text-center text-muted">Carregando visitantes...</div>;
 
   return (
-    <div className="animate-fade-in flex-container">
+    <div className="animate-fade-in dashboard-main-wrapper" style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
 
       {/* ── Header ── */}
-      <div className="mb-6 flex justify-between items-end">
+      <div style={{ flexShrink: 0, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 className="text-2xl flex items-center gap-2">
-            <UserPlus size={28} className="text-primary" />
-            Visitantes / Inscrições
-          </h2>
-          <p className="text-muted">Acompanhe novos visitantes e pessoas interessadas</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>Visitantes / Inscrições</h2>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Acompanhe novos visitantes e pessoas interessadas</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
             onClick={exportToPDF}
             style={{
-              padding: '0.65rem 1.1rem', borderRadius: '12px', border: '1.5px solid #e2e8f0',
-              background: 'white', color: '#64748b',
-              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s'
+              borderRadius: '20px', height: '44px', padding: '0 1.25rem',
+              display: 'flex', gap: '0.5rem', alignItems: 'center',
+              background: 'white', color: '#64748b', border: '1.5px solid #e2e8f0',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
             }}
             onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
@@ -514,11 +511,11 @@ const Visitors = () => {
           <button
             onClick={() => setShowAddModal(true)}
             style={{
-              padding: '0.65rem 1.25rem', borderRadius: '12px', border: 'none',
-              background: 'var(--primary)', color: 'white',
-              fontWeight: 700, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+              borderRadius: '20px', height: '44px', padding: '0 1.5rem',
+              display: 'flex', gap: '0.6rem', alignItems: 'center',
+              background: '#3b82f6', color: 'white', border: 'none',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)', transition: 'all 0.2s'
             }}
             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
@@ -529,69 +526,66 @@ const Visitors = () => {
       </div>
 
       {/* ── Banners de Status ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        {/* Total — card grande */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem', flexShrink: 0 }}>
+
+        {/* Total — card grande (ocupa 2 colunas como em Voluntários) */}
         <div style={{
+          gridColumn: 'span 2',
           background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-          borderRadius: '20px', padding: '1.5rem 2rem', color: 'white',
-          display: 'flex', alignItems: 'center', gap: '1.25rem',
-          boxShadow: '0 8px 20px -4px rgba(59,130,246,0.35)'
+          borderRadius: '24px', padding: '1.25rem 1.75rem', color: 'white',
+          display: 'flex', alignItems: 'center', gap: '1.5rem',
+          boxShadow: '0 10px 25px -5px rgba(59,130,246,0.3)'
         }}>
-          <div style={{ background: 'rgba(255,255,255,0.2)', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <UserPlus size={28} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total de Visitantes</p>
-            <h2 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, lineHeight: 1.1 }}>{visitors.length}</h2>
+            <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total de Visitantes</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800 }}>{visitors.length}</h2>
           </div>
         </div>
 
         {/* Fila de Espera */}
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fff7ed', color: '#f97316', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <AlertCircle size={22} />
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#fff7ed', color: '#f97316', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <AlertCircle size={28} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fila de Espera</p>
-            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => !v.assigned_leader_id).length}</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fila de Espera</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => !v.assigned_leader_id).length}</h2>
           </div>
         </div>
 
         {/* Pendentes */}
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fefce8', color: '#ca8a04', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Clock size={22} />
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#fefce8', color: '#ca8a04', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Clock size={28} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pendentes</p>
-            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'pending' || !v.followup_status).length}</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pendentes</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'pending' || !v.followup_status).length}</h2>
           </div>
         </div>
 
         {/* Sem Contato */}
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#fef2f2', color: '#ef4444', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <X size={22} />
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#fef2f2', color: '#ef4444', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <X size={28} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sem Contato</p>
-            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'denied').length}</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sem Contato</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'denied').length}</h2>
           </div>
         </div>
 
         {/* Confirmados */}
-        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: '#f0fdf4', color: '#16a34a', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CheckCircle size={22} />
+        <div className="card" style={{ padding: '1.25rem 1.75rem', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: '#f0fdf4', color: '#16a34a', width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CheckCircle size={28} />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirmados</p>
-            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'confirmed').length}</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirmados</p>
+            <h2 style={{ margin: 0, fontSize: '2.25rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'confirmed').length}</h2>
           </div>
         </div>
       </div>
