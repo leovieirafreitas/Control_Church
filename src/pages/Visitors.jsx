@@ -481,109 +481,117 @@ const Visitors = () => {
 
   return (
     <div className="animate-fade-in flex-container">
+
+      {/* ── Header ── */}
       <div className="mb-6 flex justify-between items-end">
         <div>
           <h2 className="text-2xl flex items-center gap-2">
-            <UserPlus size={28} className="text-purple-600" />
+            <UserPlus size={28} className="text-primary" />
             Visitantes / Inscrições
           </h2>
           <p className="text-muted">Acompanhe novos visitantes e pessoas interessadas</p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button 
+          <button
             onClick={exportToPDF}
-            style={{ 
-              padding: '0.75rem 1.25rem', borderRadius: '14px', border: '2px solid #e2e8f0', background: 'white', color: 'var(--text-muted)', 
-              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s'
+            style={{
+              padding: '0.65rem 1.1rem', borderRadius: '12px', border: '1.5px solid #e2e8f0',
+              background: 'white', color: '#64748b',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s'
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#f8fafc';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e2e8f0';
-            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
           >
-            <FileDown size={20} /> Relatório PDF
+            <FileDown size={18} /> Relatório PDF
           </button>
 
-          <div style={{ width: '220px' }}>
-            <DatePicker 
-              value={filterDate}
-              onChange={setFilterDate}
-              placeholder="Filtrar por data"
-            />
+          <div style={{ width: '200px' }}>
+            <DatePicker value={filterDate} onChange={setFilterDate} placeholder="Filtrar por data" />
           </div>
-          <button 
+
+          <button
             onClick={() => setShowAddModal(true)}
-            style={{ 
-              padding: '0.75rem 1.25rem', borderRadius: '14px', border: 'none', background: 'var(--primary)', color: 'white', 
-              fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s',
+            style={{
+              padding: '0.65rem 1.25rem', borderRadius: '12px', border: 'none',
+              background: 'var(--primary)', color: 'white',
+              fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.5rem', transition: '0.2s',
               boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
             }}
             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            <UserPlus size={20} /> Novo Visitante
+            <UserPlus size={18} /> Novo Visitante
           </button>
         </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '1rem', 
-        marginBottom: '1.5rem' 
+      {/* ── Banners de Status ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+        gap: '1rem',
+        marginBottom: '1.5rem'
       }}>
-        <div style={{ background: '#3b82f6', color: 'white', padding: '1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2)' }}>
-          <div style={{ background: 'rgba(255,255,255,0.2)', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}>
-            <UserPlus size={24} />
+        {/* Total — card grande */}
+        <div style={{
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          borderRadius: '20px', padding: '1.5rem 2rem', color: 'white',
+          display: 'flex', alignItems: 'center', gap: '1.25rem',
+          boxShadow: '0 8px 20px -4px rgba(59,130,246,0.35)'
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', width: '56px', height: '56px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <UserPlus size={28} />
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.9, textTransform: 'uppercase' }}>Total de Visitantes</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{visitors.length}</div>
+            <p style={{ margin: 0, fontSize: '0.72rem', opacity: 0.9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total de Visitantes</p>
+            <h2 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, lineHeight: 1.1 }}>{visitors.length}</h2>
           </div>
         </div>
 
-        <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ background: '#fff7ed', color: '#f97316', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}>
-            <AlertCircle size={24} />
+        {/* Fila de Espera */}
+        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ background: '#fff7ed', color: '#f97316', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <AlertCircle size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Fila de Espera</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => !v.assigned_leader_id).length}</div>
+            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fila de Espera</p>
+            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => !v.assigned_leader_id).length}</h3>
           </div>
         </div>
 
-        <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ background: '#f8fafc', color: '#64748b', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}>
-            <Clock size={24} />
+        {/* Pendentes */}
+        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ background: '#fefce8', color: '#ca8a04', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Clock size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Pendentes</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'pending' || !v.followup_status).length}</div>
+            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pendentes</p>
+            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'pending' || !v.followup_status).length}</h3>
           </div>
         </div>
 
-        <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ background: '#fef2f2', color: '#ef4444', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}>
-            <X size={24} />
+        {/* Sem Contato */}
+        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ background: '#fef2f2', color: '#ef4444', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <X size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Sem Contato</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'denied').length}</div>
+            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sem Contato</p>
+            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'denied').length}</h3>
           </div>
         </div>
 
-        <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: '1.25rem', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ background: '#ecfdf5', color: '#10b981', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', flexShrink: 0 }}>
-            <CheckCircle size={24} />
+        {/* Confirmados */}
+        <div className="card" style={{ padding: '1.25rem', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ background: '#f0fdf4', color: '#16a34a', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CheckCircle size={22} />
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Confirmados</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'confirmed').length}</div>
+            <p style={{ margin: 0, fontSize: '0.65rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirmados</p>
+            <h3 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#1e293b' }}>{visitors.filter(v => v.followup_status === 'confirmed').length}</h3>
           </div>
         </div>
       </div>
