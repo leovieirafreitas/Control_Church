@@ -482,6 +482,9 @@ const NotificationsVisitors = () => {
         }
       }
       setProgress({ sent, failed, total: targets.length, done: true });
+      if (!overrideMode) {
+        showToast(`Envio finalizado! ${sent} enviados, ${failed} falhas.`, 'success');
+      }
     } catch (err) {
       console.error('Erro no disparo:', err);
       showToast('Erro no disparo: ' + err.message, 'error');
@@ -1133,6 +1136,40 @@ const NotificationsVisitors = () => {
               {connectionStatus === 'open' ? 'INSTÂNCIA CONECTADA' : 'INSTÂNCIA DESCONECTADA'}
             </div>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Instância: <b>{evolutionInstance}</b></p>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {sending && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+          <div className="animate-scale-up" style={{ background: 'white', borderRadius: '24px', padding: '2.5rem', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Send size={32} color="#3b82f6" className="animate-bounce" />
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem', color: '#1e293b' }}>Enviando Mensagens...</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Por favor, não feche esta página.</p>
+            
+            <div style={{ background: '#f8fafc', borderRadius: '16px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                <span style={{ color: '#64748b' }}>Progresso</span>
+                <span style={{ color: '#3b82f6' }}>{progress.sent + progress.failed} / {progress.total}</span>
+              </div>
+              <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#3b82f6', width: `${progress.total > 0 ? ((progress.sent + progress.failed) / progress.total) * 100 : 0}%`, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <div style={{ flex: 1, padding: '0.75rem', background: '#ecfdf5', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>{progress.sent}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase' }}>Sucesso</span>
+              </div>
+              <div style={{ flex: 1, padding: '0.75rem', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                <span style={{ display: 'block', fontSize: '1.25rem', fontWeight: 800, color: '#dc2626' }}>{progress.failed}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase' }}>Falhas</span>
+              </div>
+            </div>
           </div>
         </div>,
         document.body

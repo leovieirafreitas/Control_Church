@@ -301,7 +301,8 @@ const Visitors = () => {
 
         let matchesDate = true;
         if (filterDate) {
-          const visitorDate = new Date(v.createdAt).toISOString().split('T')[0];
+          const dateObj = new Date(v.createdAt);
+          const visitorDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
           matchesDate = visitorDate === filterDate;
         }
 
