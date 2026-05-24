@@ -510,7 +510,10 @@ const Visitors = () => {
           </div>
 
           <button
-            onClick={() => window.open(`/decisoes?church=${activeChurch?.id || ''}`, '_blank')}
+            onClick={() => {
+              const slug = activeChurch?.name ? activeChurch.name.toLowerCase().replace('chama church - ', '').replace(/ /g, '-') : '';
+              window.open(`/decisoes?church=${slug}`, '_blank');
+            }}
             style={{
               borderRadius: '20px', height: '44px', padding: '0 1.25rem',
               display: 'flex', gap: '0.5rem', alignItems: 'center',

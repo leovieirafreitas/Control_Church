@@ -114,7 +114,7 @@ const PublicDecisions = () => {
           </p>
           {activeChurchData && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 700, marginTop: '1rem' }}>
-              <Shield size={14} /> {activeChurchData.name}
+              {activeChurchData.name}
             </div>
           )}
         </div>
