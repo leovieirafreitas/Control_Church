@@ -672,6 +672,7 @@ const Visitors = () => {
               <thead>
                 <tr>
                   <th>Nome</th>
+                  <th>Sexo</th>
                   <th>Contato</th>
                   <th>Bairro</th>
                   <th>Coordenador Responsável</th>
@@ -684,6 +685,15 @@ const Visitors = () => {
                 {filteredVisitors.map((v) => (
                   <tr key={v.id}>
                     <td className="font-bold">{v.name}</td>
+                    <td>
+                      {v.gender === 'M' ? (
+                        <span style={{ padding: '0.2rem 0.5rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Masc.</span>
+                      ) : v.gender === 'F' ? (
+                        <span style={{ padding: '0.2rem 0.5rem', background: '#fce7f3', color: '#be185d', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Fem.</span>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>—</span>
+                      )}
+                    </td>
                     <td>
                       <div className="flex items-center gap-2">
                         <Phone size={14} className="text-muted" />

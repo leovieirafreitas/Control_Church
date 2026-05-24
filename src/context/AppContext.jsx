@@ -297,7 +297,8 @@ export const AppProvider = ({ children }) => {
       phone: data.phone,
       neighborhood: data.neighborhood,
       church_id: churchId,
-      assigned_leader_id: assignedLeaderId
+      assigned_leader_id: assignedLeaderId,
+      gender: data.gender || null
     };
 
     const { data: created, error } = await supabase

@@ -30,7 +30,7 @@ const PublicRegister = () => {
   const rawUrlChurchId = searchParams.get('church') || '';
 
   const [mode, setMode] = useState(type || null);
-  const [form, setForm] = useState({ name: '', phone: '', churchId: rawUrlChurchId || '', neighborhood: '' });
+  const [form, setForm] = useState({ name: '', phone: '', churchId: rawUrlChurchId || '', neighborhood: '', gender: '' });
 
   // Resolve o slug para o ID correto quando as igrejas carregarem
   useEffect(() => {
@@ -141,7 +141,7 @@ const PublicRegister = () => {
     setMode(newMode);
     // Mantém o churchId na query string ao navegar entre as telas
     const churchQuery = rawUrlChurchId ? `?church=${rawUrlChurchId}` : '';
-    setForm({ name: '', phone: '', churchId: form.churchId || rawUrlChurchId || '', neighborhood: '' });
+    setForm({ name: '', phone: '', churchId: form.churchId || rawUrlChurchId || '', neighborhood: '', gender: '' });
     setSelectedDeptIds([]);
     setSelectedNeighborhoods([]);
     if (newMode) navigate(`/register/${newMode}${churchQuery}`);
@@ -194,6 +194,10 @@ const PublicRegister = () => {
     }
     if (isVisitor && !form.neighborhood) {
       alert("Por favor, selecione o seu bairro.");
+      return;
+    }
+    if (isVisitor && !form.gender) {
+      alert("Por favor, selecione o seu sexo.");
       return;
     }
     if (isCoordinator && selectedNeighborhoods.length === 0) {
@@ -569,7 +573,7 @@ const PublicRegister = () => {
             <button
               onClick={() => {
                 setSuccess(false);
-                setForm({ name: '', phone: '', neighborhood: '', churchId: urlChurchId || '', departmentIds: [], birthDate: '', cpf: '', email: '' });
+                setForm({ name: '', phone: '', neighborhood: '', churchId: form.churchId || rawUrlChurchId || '', departmentIds: [], birthDate: '', cpf: '', email: '', gender: '' });
                 setSelectedNeighborhoods([]);
                 setSelectedDeptIds([]);
               }}
@@ -708,6 +712,35 @@ const PublicRegister = () => {
                   />
                 </div>
               </div>
+
+              {/* Sexo (visitante) */}
+              {isVisitor && (
+                <div className="pr-field">
+                  <label className="pr-label" style={{ marginBottom: '0.6rem' }}>Sexo</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, gender: 'M' })}
+                      className={`pr-dept-item ${form.gender === 'M' ? 'active' : ''}`}
+                    >
+                      <div className="pr-check">
+                        {form.gender === 'M' && <Check size={10} color="#fff" />}
+                      </div>
+                      <span className="pr-dept-name" style={{ fontSize: '0.85rem' }}>Masculino</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, gender: 'F' })}
+                      className={`pr-dept-item ${form.gender === 'F' ? 'active' : ''}`}
+                    >
+                      <div className="pr-check">
+                        {form.gender === 'F' && <Check size={10} color="#fff" />}
+                      </div>
+                      <span className="pr-dept-name" style={{ fontSize: '0.85rem' }}>Feminino</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Departamentos (voluntário) */}
               {isVolunteer && (
