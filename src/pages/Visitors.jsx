@@ -7,7 +7,7 @@ import logoImg from '../assets/cc-logo-small.png';
 import { 
   Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, 
   MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, 
-  CheckCircle, MessageSquare, FileDown 
+  CheckCircle, MessageSquare, FileDown, Heart
 } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import Dropdown from '../components/Dropdown';
@@ -508,6 +508,20 @@ const Visitors = () => {
           <div style={{ width: '200px' }}>
             <DatePicker value={filterDate} onChange={setFilterDate} placeholder="Filtrar por data" />
           </div>
+
+          <button
+            onClick={() => window.open(`/decisoes?church=${activeChurch?.id || ''}`, '_blank')}
+            style={{
+              borderRadius: '20px', height: '44px', padding: '0 1.25rem',
+              display: 'flex', gap: '0.5rem', alignItems: 'center',
+              background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fecaca',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fecaca'; }}
+          >
+            <Heart size={18} /> Confirmar Decisões
+          </button>
 
           <button
             onClick={() => setShowAddModal(true)}

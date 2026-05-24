@@ -15,6 +15,7 @@ import Leaders from './pages/Leaders';
 import PublicFeedback from './pages/PublicFeedback';
 import FeedbackDashboard from './pages/FeedbackDashboard';
 import VisitorConfirmation from './pages/VisitorConfirmation';
+import PublicDecisions from './pages/PublicDecisions';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ChurchProvider } from './context/ChurchContext';
@@ -51,6 +52,7 @@ function AppRoutes() {
           <Route path="/register/:type?" element={<PublicRegister />} />
           <Route path="/pesquisa/:churchId?" element={<PublicFeedback />} />
           <Route path="/confirmar/:visitorId" element={<VisitorConfirmation />} />
+          <Route path="/decisoes" element={<PublicDecisions />} />
           <Route
             path="/"
             element={
