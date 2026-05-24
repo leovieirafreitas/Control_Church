@@ -298,7 +298,8 @@ export const AppProvider = ({ children }) => {
       neighborhood: data.neighborhood,
       church_id: churchId,
       assigned_leader_id: assignedLeaderId,
-      gender: data.gender || null
+      marital_status: data.maritalStatus || data.marital_status || null,
+      age: data.age ? parseInt(data.age) : null
     };
 
     const { data: created, error } = await supabase
@@ -324,14 +325,15 @@ export const AppProvider = ({ children }) => {
             if (adminNumber) {
               const churchName = churches.find(c => c.id === churchId)?.name || 'Chama Church';
               const savedMsg = localStorage.getItem('system_alert_msg');
-              const defaultAlert = `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nSexo: {{sexo}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
+              const defaultAlert = `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nEstado Civil: {{estado_civil}}\nIdade: {{idade}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
               
               const rawMsg = savedMsg || defaultAlert;
               const alertMsg = rawMsg
                 .replace(/{{nome}}/g, data.name || '')
                 .replace(/{{telefone}}/g, data.phone || '')
                 .replace(/{{bairro}}/g, data.neighborhood || 'Não informado')
-                .replace(/{{sexo}}/g, data.gender === 'M' ? 'Masculino' : data.gender === 'F' ? 'Feminino' : 'Não informado')
+                .replace(/{{estado_civil}}/g, data.maritalStatus || data.marital_status || 'Não informado')
+                .replace(/{{idade}}/g, data.age || 'Não informado')
                 .replace(/{{unidade}}/g, churchName)
                 .replace(/\\n/g, '\n');
 
@@ -524,6 +526,8 @@ export const AppProvider = ({ children }) => {
     birthDate: v.birth_date,
     registrationType: v.registration_type,
     createdAt: v.created_at,
+    maritalStatus: v.marital_status,
+    age: v.age,
   }));
 
   const tithesNormalized = tithes.map(t => ({

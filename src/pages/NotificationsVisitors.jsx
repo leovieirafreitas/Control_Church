@@ -38,10 +38,17 @@ const NotificationsVisitors = () => {
   const [autoSendDays, setAutoSendDays] = useState([0]);
   const [sundayVideoUrl, setSundayVideoUrl] = useState('');
   const [sundayMsg, setSundayMsg] = useState(`Olá, {{nome}}! 👋\nQue alegria ter você conosco recentemente! ✨\n\nPreparamos um vídeo especial de boas-vindas para você. Assista aqui:\n{{video}}\n\nSeja muito bem-vindo(a) à nossa família! 🔥🙏`);
-  const [sundayCoordMsg, setSundayCoordMsg] = useState(`🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n🚻 *Sexo:* {{sexo}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`);
+  const [sundayCoordMsg, setSundayCoordMsg] = useState(`🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n💍 *Estado Civil:* {{estado_civil}}\n🎂 *Idade:* {{idade}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`);
   const [coordCheckMsg, setCoordCheckMsg] = useState(`Olá, {{nome}}! 👋\nTudo bem? Aqui é da Equipe Chama Church. 🔥\n\nGostaríamos de saber: o coordenador {{coordenador}} já entrou em contato com você? 😊\nQueremos garantir que você esteja sendo muito bem acompanhado(a)!\n\nPor favor, confirme clicando no link abaixo:\n👇\n{{confirmar}}\n\nDeus te abençoe! 🙏`);
   const [systemAlertMsg, setSystemAlertMsg] = useState(() => {
-    return localStorage.getItem('system_alert_msg') || `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nSexo: {{sexo}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
+    let saved = localStorage.getItem('system_alert_msg') || `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nEstado Civil: {{estado_civil}}\nIdade: {{idade}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`;
+    if (saved.includes('{{sexo}}')) {
+      saved = saved
+        .replace(/🚻 \*Sexo:\* {{sexo}}/g, '💍 *Estado Civil:* {{estado_civil}}\n🎂 *Idade:* {{idade}}')
+        .replace(/Sexo: {{sexo}}/g, 'Estado Civil: {{estado_civil}}\nIdade: {{idade}}')
+        .replace(/{{sexo}}/g, '{{estado_civil}}, {{idade}} anos');
+    }
+    return saved;
   });
 
   // -- UI States --
@@ -120,7 +127,8 @@ const NotificationsVisitors = () => {
       .replace(/{{video}}/g, sundayVideoUrl || 'https://link.com/video')
       .replace(/{{telefone}}/g, '(92) 98888-7777')
       .replace(/{{bairro}}/g, 'Centro')
-      .replace(/{{sexo}}/g, 'Feminino')
+      .replace(/{{estado_civil}}/g, 'Solteiro(a)')
+      .replace(/{{idade}}/g, '25')
       .replace(/{{unidade}}/g, activeChurch?.name || 'Chama Church Sede')
       .replace(/{{coordenador}}/g, 'Pr. Marcos')
       .replace(/{{confirmar}}/g, 'https://chama.app/confirm/123')
@@ -151,10 +159,11 @@ const NotificationsVisitors = () => {
         { label: 'Nome do Visitante', var: '{{nome}}' },
         { label: 'Telefone', var: '{{telefone}}' },
         { label: 'Bairro', var: '{{bairro}}' },
-        { label: 'Sexo', var: '{{sexo}}' },
+        { label: 'Estado Civil', var: '{{estado_civil}}' },
+        { label: 'Idade', var: '{{idade}}' },
         { label: 'Unidade/Igreja', var: '{{unidade}}' }
       ],
-      premium: `🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n🚻 *Sexo:* {{sexo}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`
+      premium: `🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n💍 *Estado Civil:* {{estado_civil}}\n🎂 *Idade:* {{idade}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`
     },
     {
       id: 'manual_followup',
@@ -179,10 +188,11 @@ const NotificationsVisitors = () => {
         { label: 'Nome do Visitante', var: '{{nome}}' },
         { label: 'Telefone', var: '{{telefone}}' },
         { label: 'Bairro', var: '{{bairro}}' },
-        { label: 'Sexo', var: '{{sexo}}' },
+        { label: 'Estado Civil', var: '{{estado_civil}}' },
+        { label: 'Idade', var: '{{idade}}' },
         { label: 'Unidade/Igreja', var: '{{unidade}}' }
       ],
-      premium: `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nSexo: {{sexo}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`
+      premium: `*ALERTA DE CONTINGÊNCIA*\n\nNovo visitante em bairro *sem coordenador* mapeado!\n\nNome: *{{nome}}*\nTelefone: {{telefone}}\nBairro: {{bairro}}\nEstado Civil: {{estado_civil}}\nIdade: {{idade}}\nUnidade: {{unidade}}\n\nO contato foi salvo na "fila de espera" do sistema. Por favor, atribua um coordenador manualmente.`
     }
   ];
 
@@ -213,7 +223,16 @@ const NotificationsVisitors = () => {
         }
 
         setSundayMsg((data.visitor_welcome_msg || '').replace(/\\n/g, '\n') || `Olá, {{nome}}! 👋\nQue alegria ter você conosco recentemente! ✨\n\nPreparamos um vídeo especial de boas-vindas para você. Assista aqui:\n{{video}}\n\nSeja muito bem-vindo(a) à nossa família! 🔥🙏`);
-        setSundayCoordMsg((data.visitor_coord_msg || '').replace(/\\n/g, '\n') || `🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n🚻 *Sexo:* {{sexo}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`);
+        let coordMsg = (data.visitor_coord_msg || '').replace(/\\n/g, '\n');
+        if (!coordMsg) {
+          coordMsg = `🚨 *NOVO VISITANTE REGISTRADO* 🚨\n\n👤 *Nome:* {{nome}}\n📱 *Telefone:* {{telefone}}\n📍 *Bairro:* {{bairro}}\n💍 *Estado Civil:* {{estado_civil}}\n🎂 *Idade:* {{idade}}\n\nPor favor, faça o acompanhamento deste visitante o quanto antes! 🏃💨\n{{unidade}}`;
+        } else if (coordMsg.includes('{{sexo}}')) {
+          coordMsg = coordMsg
+            .replace(/🚻 \*Sexo:\* {{sexo}}/g, '💍 *Estado Civil:* {{estado_civil}}\n🎂 *Idade:* {{idade}}')
+            .replace(/Sexo: {{sexo}}/g, 'Estado Civil: {{estado_civil}}\nIdade: {{idade}}')
+            .replace(/{{sexo}}/g, '{{estado_civil}}, {{idade}} anos');
+        }
+        setSundayCoordMsg(coordMsg);
         setCoordCheckMsg((data.visitor_coord_check_msg || '').replace(/\\n/g, '\n') || `Olá, {{nome}}! 👋\nTudo bem? Aqui é da Equipe Chama Church. 🔥\n\nGostaríamos de saber: o coordenador {{coordenador}} já entrou em contato com você? 😊\nQueremos garantir que você esteja sendo muito bem acompanhado(a)!\n\nPor favor, confirme clicando no link abaixo:\n👇\n{{confirmar}}\n\nDeus te abençoe! 🙏`);
       } else {
         const slug = activeChurch?.name
@@ -420,7 +439,8 @@ const NotificationsVisitors = () => {
               .replace(/{{nome}}/g, v.name || '')
               .replace(/{{telefone}}/g, v.phone || '')
               .replace(/{{bairro}}/g, v.neighborhood || '')
-              .replace(/{{sexo}}/g, v.gender === 'M' ? 'Masculino' : v.gender === 'F' ? 'Feminino' : 'Não informado')
+              .replace(/{{estado_civil}}/g, v.maritalStatus || v.marital_status || 'Não informado')
+              .replace(/{{idade}}/g, v.age ? `${v.age} anos` : 'Não informado')
               .replace(/{{unidade}}/g, activeChurch?.name || '')
               .replace(/\n/g, '\n');
             await sendWA(v.coordenadores.phone, cMsg).catch(() => false);
@@ -433,7 +453,8 @@ const NotificationsVisitors = () => {
                 .replace(/{{nome}}/g, v.name || '')
                 .replace(/{{telefone}}/g, v.phone || '')
                 .replace(/{{bairro}}/g, v.neighborhood || 'Não informado')
-                .replace(/{{sexo}}/g, v.gender === 'M' ? 'Masculino' : v.gender === 'F' ? 'Feminino' : 'Não informado')
+                .replace(/{{estado_civil}}/g, v.maritalStatus || v.marital_status || 'Não informado')
+                .replace(/{{idade}}/g, v.age ? `${v.age} anos` : 'Não informado')
                 .replace(/{{unidade}}/g, activeChurch?.name || '')
                 .replace(/\n/g, '\n');
               await sendWA(adminNumber, sMsg).catch(() => false);
@@ -447,7 +468,8 @@ const NotificationsVisitors = () => {
               .replace(/{{nome}}/g, v.name || '')
               .replace(/{{telefone}}/g, v.phone || '')
               .replace(/{{bairro}}/g, v.neighborhood || '')
-              .replace(/{{sexo}}/g, v.gender === 'M' ? 'Masculino' : v.gender === 'F' ? 'Feminino' : 'Não informado')
+              .replace(/{{estado_civil}}/g, v.maritalStatus || v.marital_status || 'Não informado')
+              .replace(/{{idade}}/g, v.age ? `${v.age} anos` : 'Não informado')
               .replace(/{{unidade}}/g, activeChurch?.name || '')
               .replace(/\n/g, '\n');
             const ok = await sendWA(v.coordenadores.phone, cMsg).catch(() => false);
@@ -461,7 +483,8 @@ const NotificationsVisitors = () => {
                 .replace(/{{nome}}/g, v.name || '')
                 .replace(/{{telefone}}/g, v.phone || '')
                 .replace(/{{bairro}}/g, v.neighborhood || 'Não informado')
-                .replace(/{{sexo}}/g, v.gender === 'M' ? 'Masculino' : v.gender === 'F' ? 'Feminino' : 'Não informado')
+                .replace(/{{estado_civil}}/g, v.maritalStatus || v.marital_status || 'Não informado')
+                .replace(/{{idade}}/g, v.age ? `${v.age} anos` : 'Não informado')
                 .replace(/{{unidade}}/g, activeChurch?.name || '')
                 .replace(/\n/g, '\n');
               const ok = await sendWA(adminNumber, sMsg).catch(() => false);

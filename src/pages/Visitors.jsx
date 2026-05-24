@@ -20,7 +20,9 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
     name: '',
     phone: '',
     neighborhood: '',
-    assigned_leader_id: null
+    assigned_leader_id: null,
+    maritalStatus: '',
+    age: ''
   });
   const [saving, setSaving] = useState(false);
 
@@ -98,6 +100,37 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
             icon={MapPin}
           />
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'end' }}>
+            <div>
+              <Dropdown
+                label="Estado Civil"
+                value={form.maritalStatus}
+                valueLabel={form.maritalStatus}
+                options={[
+                  { value: 'Solteiro(a)', label: 'Solteiro(a)' },
+                  { value: 'Casado(a)', label: 'Casado(a)' },
+                  { value: 'Divorciado(a)', label: 'Divorciado(a)' },
+                  { value: 'Viúvo(a)', label: 'Viúvo(a)' },
+                  { value: 'União Estável', label: 'União Estável' }
+                ]}
+                onSelect={opt => setForm(p => ({ ...p, maritalStatus: opt.value }))}
+                placeholder="Selecione..."
+                icon={Heart}
+              />
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Idade</label>
+              <input 
+                type="number" 
+                min="0"
+                max="120"
+                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500', height: '48px' }}
+                value={form.age} 
+                onChange={e => setForm(p => ({ ...p, age: e.target.value }))} 
+              />
+            </div>
+          </div>
+
           <div>
             <Dropdown
               label="Atribuir Coordenador"
@@ -130,7 +163,9 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
     name: visitor.name,
     phone: visitor.phone ?? '',
     neighborhood: visitor.neighborhood ?? '',
-    assigned_leader_id: visitor.assigned_leader_id ?? null
+    assigned_leader_id: visitor.assigned_leader_id ?? null,
+    maritalStatus: visitor.maritalStatus ?? '',
+    age: visitor.age ?? ''
   });
   const [saving, setSaving] = useState(false);
 
@@ -205,6 +240,37 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
             placeholder="Ex: Cidade Nova..."
             icon={MapPin}
           />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'end' }}>
+            <div>
+              <Dropdown
+                label="Estado Civil"
+                value={form.maritalStatus}
+                valueLabel={form.maritalStatus}
+                options={[
+                  { value: 'Solteiro(a)', label: 'Solteiro(a)' },
+                  { value: 'Casado(a)', label: 'Casado(a)' },
+                  { value: 'Divorciado(a)', label: 'Divorciado(a)' },
+                  { value: 'Viúvo(a)', label: 'Viúvo(a)' },
+                  { value: 'União Estável', label: 'União Estável' }
+                ]}
+                onSelect={opt => setForm(p => ({ ...p, maritalStatus: opt.value }))}
+                placeholder="Selecione..."
+                icon={Heart}
+              />
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Idade</label>
+              <input 
+                type="number" 
+                min="0"
+                max="120"
+                style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '0.9rem', outline: 'none', transition: '0.2s', fontWeight: '500', height: '48px' }}
+                value={form.age} 
+                onChange={e => setForm(p => ({ ...p, age: e.target.value }))} 
+              />
+            </div>
+          </div>
 
           <div>
             <Dropdown
@@ -689,7 +755,8 @@ const Visitors = () => {
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>Sexo</th>
+                  <th>Estado Civil</th>
+                  <th>Idade</th>
                   <th>Contato</th>
                   <th>Bairro</th>
                   <th>Coordenador Responsável</th>
@@ -702,15 +769,8 @@ const Visitors = () => {
                 {filteredVisitors.map((v) => (
                   <tr key={v.id}>
                     <td className="font-bold">{v.name}</td>
-                    <td>
-                      {v.gender === 'M' ? (
-                        <span style={{ padding: '0.2rem 0.5rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Masc.</span>
-                      ) : v.gender === 'F' ? (
-                        <span style={{ padding: '0.2rem 0.5rem', background: '#fce7f3', color: '#be185d', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700 }}>Fem.</span>
-                      ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>—</span>
-                      )}
-                    </td>
+                    <td>{v.maritalStatus || '—'}</td>
+                    <td>{v.age ? `${v.age} anos` : '—'}</td>
                     <td>
                       <div className="flex items-center gap-2">
                         <Phone size={14} className="text-muted" />

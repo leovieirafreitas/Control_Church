@@ -3,11 +3,13 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   UserCheck, Phone, User, Church, CheckCircle2,
   Loader2, Search, Check,
-  ChevronRight, ArrowLeft, Heart, Sparkles, ChevronDown, Shield
+  ChevronRight, ArrowLeft, Heart, Sparkles, ChevronDown, Shield,
+  Calendar
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useChurch } from '../context/ChurchContext';
 import { supabase } from '../lib/supabase';
+import Dropdown from '../components/Dropdown';
 import { MANAUS_NEIGHBORHOODS_TO_ZONES } from '../utils/manausMapping';
 import logoImg from '../assets/cc-logo.webp';
 
@@ -30,7 +32,7 @@ const PublicRegister = () => {
   const rawUrlChurchId = searchParams.get('church') || '';
 
   const [mode, setMode] = useState(type || null);
-  const [form, setForm] = useState({ name: '', phone: '', churchId: rawUrlChurchId || '', neighborhood: '', gender: '' });
+  const [form, setForm] = useState({ name: '', phone: '', churchId: rawUrlChurchId || '', neighborhood: '', maritalStatus: '', age: '' });
 
   // Resolve o slug para o ID correto quando as igrejas carregarem
   useEffect(() => {
@@ -141,7 +143,7 @@ const PublicRegister = () => {
     setMode(newMode);
     // Mantém o churchId na query string ao navegar entre as telas
     const churchQuery = rawUrlChurchId ? `?church=${rawUrlChurchId}` : '';
-    setForm({ name: '', phone: '', churchId: form.churchId || rawUrlChurchId || '', neighborhood: '', gender: '' });
+    setForm({ name: '', phone: '', churchId: form.churchId || rawUrlChurchId || '', neighborhood: '', maritalStatus: '', age: '' });
     setSelectedDeptIds([]);
     setSelectedNeighborhoods([]);
     if (newMode) navigate(`/register/${newMode}${churchQuery}`);
@@ -196,8 +198,12 @@ const PublicRegister = () => {
       alert("Por favor, selecione o seu bairro.");
       return;
     }
-    if (isVisitor && !form.gender) {
-      alert("Por favor, selecione o seu sexo.");
+    if (isVisitor && !form.maritalStatus) {
+      alert("Por favor, selecione o seu estado civil.");
+      return;
+    }
+    if (isVisitor && !form.age) {
+      alert("Por favor, preencha a sua idade.");
       return;
     }
     if (isCoordinator && selectedNeighborhoods.length === 0) {
@@ -573,7 +579,7 @@ const PublicRegister = () => {
             <button
               onClick={() => {
                 setSuccess(false);
-                setForm({ name: '', phone: '', neighborhood: '', churchId: form.churchId || rawUrlChurchId || '', departmentIds: [], birthDate: '', cpf: '', email: '', gender: '' });
+                setForm({ name: '', phone: '', neighborhood: '', churchId: form.churchId || rawUrlChurchId || '', departmentIds: [], birthDate: '', cpf: '', email: '', maritalStatus: '', age: '' });
                 setSelectedNeighborhoods([]);
                 setSelectedDeptIds([]);
               }}
@@ -713,31 +719,43 @@ const PublicRegister = () => {
                 </div>
               </div>
 
-              {/* Sexo (visitante) */}
+              {/* Estado Civil (visitante) */}
+              {isVisitor && (
+                <div className="pr-field" style={{ marginBottom: '1.25rem' }}>
+                  <label className="pr-label">Estado Civil</label>
+                  <Dropdown
+                    value={form.maritalStatus}
+                    valueLabel={form.maritalStatus}
+                    options={[
+                      { value: 'Solteiro(a)', label: 'Solteiro(a)' },
+                      { value: 'Casado(a)', label: 'Casado(a)' },
+                      { value: 'Divorciado(a)', label: 'Divorciado(a)' },
+                      { value: 'Viúvo(a)', label: 'Viúvo(a)' },
+                      { value: 'União Estável', label: 'União Estável' }
+                    ]}
+                    onSelect={opt => setForm({ ...form, maritalStatus: opt.value })}
+                    placeholder="Selecione..."
+                    icon={Heart}
+                  />
+                </div>
+              )}
+
+              {/* Idade (visitante) */}
               {isVisitor && (
                 <div className="pr-field">
-                  <label className="pr-label" style={{ marginBottom: '0.6rem' }}>Sexo</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, gender: 'M' })}
-                      className={`pr-dept-item ${form.gender === 'M' ? 'active' : ''}`}
-                    >
-                      <div className="pr-check">
-                        {form.gender === 'M' && <Check size={10} color="#fff" />}
-                      </div>
-                      <span className="pr-dept-name" style={{ fontSize: '0.85rem' }}>Masculino</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, gender: 'F' })}
-                      className={`pr-dept-item ${form.gender === 'F' ? 'active' : ''}`}
-                    >
-                      <div className="pr-check">
-                        {form.gender === 'F' && <Check size={10} color="#fff" />}
-                      </div>
-                      <span className="pr-dept-name" style={{ fontSize: '0.85rem' }}>Feminino</span>
-                    </button>
+                  <label className="pr-label">Idade</label>
+                  <div className="pr-input-wrap">
+                    <span className="pr-input-icon"><Calendar size={16} /></span>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      max="120"
+                      placeholder="Sua idade"
+                      value={form.age}
+                      onChange={e => setForm({ ...form, age: e.target.value })}
+                      className="pr-input"
+                    />
                   </div>
                 </div>
               )}
