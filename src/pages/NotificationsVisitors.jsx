@@ -319,6 +319,10 @@ const NotificationsVisitors = () => {
 
 
   const sendWA = async (number, text, mediaUrl = null) => {
+    if (!text || text.trim() === '') {
+      console.error('sendWA: O texto da mensagem está vazio!', { number });
+      return false;
+    }
     try {
       const raw = (number || '').replace(/\D/g, '');
       const formatted = raw.startsWith('55') ? raw : `55${raw}`;
@@ -373,13 +377,13 @@ const NotificationsVisitors = () => {
 
     const targets = activeList.filter(v => {
       const isSent = mode === 'followup' ? v.coord_check_sent : v.welcome_sent;
-      if (overrideMode) return !isSent && v.phone;
+      if (overrideMode) return !isSent;
 
       // Se houver seleção manual, usa ela. Se não houver nada selecionado, pega todos os pendentes.
       if (selectedIds.length > 0) {
-        return selectedIds.includes(v.id) && v.phone;
+        return selectedIds.includes(v.id);
       }
-      return !isSent && v.phone; // Fallback: enviar para todos os pendentes
+      return !isSent; // Fallback: enviar para todos os pendentes
     });
 
     if (targets.length === 0) {
@@ -934,7 +938,11 @@ const NotificationsVisitors = () => {
                         <td>{massSendSubTab === 'coordinators' ? v.name : (v.phone || '—')}</td>
                         <td>{massSendSubTab === 'coordinators' ? (v.coordenadores?.phone || '—') : (v.coordenadores?.name || <span className="text-error">Pendente</span>)}</td>
                         <td style={{ verticalAlign: 'middle' }}>
-                          {isSent ? (
+                          {!v.phone ? (
+                            <span className="badge badge-red" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', fontSize: '0.65rem', fontWeight: 700, width: 'fit-content', borderRadius: '6px', background: '#fee2e2', color: '#b91c1c' }}>
+                              Sem contato
+                            </span>
+                          ) : isSent ? (
                             <span className="badge badge-green" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.15rem 0.5rem', fontSize: '0.65rem', fontWeight: 700, width: 'fit-content', borderRadius: '6px' }}>
                               Enviado
                             </span>
