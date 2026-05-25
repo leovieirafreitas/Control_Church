@@ -534,16 +534,6 @@ const NotificationsVisitors = () => {
     const timer = setInterval(() => {
       const now = new Date();
 
-      if (massSendSubTab === 'followup') {
-        setCountdown('');
-        return;
-      }
-
-      if (!autoScheduleEnabled || !autoSendDays?.includes(now.getDay())) {
-        setCountdown('');
-        return;
-      }
-
       const [h, m] = sundaySchedule.split(':').map(Number);
       const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
       let diff = targetDate - now;
@@ -560,10 +550,18 @@ const NotificationsVisitors = () => {
         }, jitter);
       }
 
-      if (diff < 0) { setCountdown('Executado ou agendado'); return; }
-      const mins = Math.floor(diff / 1000 / 60);
-      const secs = Math.floor((diff / 1000) % 60);
-      setCountdown(`${mins}m ${secs}s`);
+      // UI: Atualiza o contador apenas se estiver na aba correta e habilitado
+      if (massSendSubTab === 'followup' || !autoScheduleEnabled || !autoSendDays?.includes(now.getDay())) {
+        setCountdown('');
+      } else {
+        if (diff < 0) {
+          setCountdown('Executado ou agendado');
+        } else {
+          const mins = Math.floor(diff / 1000 / 60);
+          const secs = Math.floor((diff / 1000) % 60);
+          setCountdown(`${mins}m ${secs}s`);
+        }
+      }
     }, 1000);
 
     return () => clearInterval(timer);
