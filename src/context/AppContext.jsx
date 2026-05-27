@@ -340,8 +340,8 @@ export const AppProvider = ({ children }) => {
 
     // Se não tiver coordenador assinado ainda e tivermos o bairro, faz a auto-atribuição
     if (!assignedLeaderId && data.neighborhood) {
-      // Prioriza coordenadores já carregados no estado para evitar requisição extra
-      const sourceLeaders = leaders.length > 0 ? leaders : null;
+      // Prioriza coordenadores já carregados no estado, MAS verifica se pertencem à igreja correta
+      const sourceLeaders = (leaders.length > 0 && leaders[0].church_id === churchId) ? leaders : null;
       
       let matchingLeaders = sourceLeaders;
       if (!matchingLeaders) {
