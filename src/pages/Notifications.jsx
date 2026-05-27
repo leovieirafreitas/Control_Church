@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useChurch } from '../context/ChurchContext';
 import { supabase } from '../lib/supabase';
-import { Bell, Send, CheckCircle, AlertCircle, Loader2, Calendar, ChevronDown, Search, X, Users, Clock, RefreshCw, UserCheck, Radio, Upload, Smartphone, MessageSquare, Settings, Zap } from 'lucide-react';
+import { Bell, Send, CheckCircle, AlertCircle, Loader2, Calendar, ChevronDown, Search, X, Users, Clock, RefreshCw, UserCheck, Radio, Upload, Smartphone, MessageSquare, Settings, Zap, Save } from 'lucide-react';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bulk-notify`;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const Notifications = ({ defaultTab = 'pending' }) => {
   const navigate = useNavigate();
-  const { volunteers, tithes, departments, templates, setTemplates } = useApp();
+  const { volunteers, tithes, departments, templates, setTemplates, saveTemplateToDb } = useApp();
   const { activeChurch } = useChurch();
   const now = new Date();
 
@@ -1066,6 +1066,26 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                   </button>
                 ))}
               </div>
+              
+              <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'white' }}>
+                <button
+                  onClick={() => {
+                    const template = templates.find(t => t.id === selectedTemplateId) || templates[0];
+                    saveTemplateToDb(template.id, template.name, template.text);
+                    showToast('Modelo salvo com sucesso!', 'success');
+                  }}
+                  style={{
+                    width: '100%', padding: '0.85rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px',
+                    fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(59,130,246,0.3)', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <Save size={18} />
+                  Salvar Alterações
+                </button>
+              </div>
             </div>
 
             {/* AREA DO EDITOR */}
@@ -1107,7 +1127,9 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                               <button
                                 key={v.var}
                                 onClick={() => {
-                                  updateTemplateText(template.id, template.text + ' ' + v.var);
+                                  const newText = template.text + ' ' + v.var;
+                                  updateTemplateText(template.id, newText);
+                                  saveTemplateToDb(template.id, template.name, newText);
                                   setDropdownOpen(null);
                                 }}
                                 style={{ width: '100%', padding: '0.7rem 0.85rem', border: 'none', background: 'transparent', textAlign: 'left', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-dark)', transition: 'background 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -1135,7 +1157,10 @@ const Notifications = ({ defaultTab = 'pending' }) => {
                           background: '#f8fafc', outline: 'none', transition: 'all 0.2s', lineHeight: '1.6' 
                         }}
                         onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                        onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'var(--border-color)';
+                          saveTemplateToDb(template.id, template.name, e.target.value);
+                        }}
                       />
 
                       <div style={{ background: '#f0f9ff', padding: '1.5rem', borderRadius: '20px', border: '1px dashed #3b82f6' }}>

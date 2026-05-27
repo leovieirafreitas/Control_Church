@@ -109,9 +109,67 @@ export const AppProvider = ({ children }) => {
     }
   }, [activeChurch?.id]);
 
+  const defaultTemplatesList = [
+    {
+      id: 'default',
+      name: 'Lembrete de Pendência',
+      text: 'Olá {{nome}}! \n\nNotamos que ainda não recebemos a sua contribuição referente ao mês de *{{mes}}*. \n\nSua ajuda é fundamental para mantermos os trabalhos da igreja. Se já realizou, por favor, desconsidere esta mensagem. \n\nDeus te abençoe!'
+    },
+    {
+      id: 'custom_message',
+      name: 'Mensagem Elaborada',
+      text: 'Olá {{nome}}!\n\nEscreva aqui sua mensagem elaborada para os voluntários do departamento {{departamentos}}.\n\nVocê pode usar as variáveis disponíveis para personalizar o texto conforme necessário.\n\nDeus te abençoe!'
+    },
+    {
+      id: 'welcome',
+      name: 'Boas Vindas',
+      text: 'Paz do Senhor, {{nome}}!\n\nÉ uma alegria ter você conosco no departamento {{departamentos}}. Que Deus te use grandemente nesta obra!\n\nSeja muito bem-vindo!'
+    },
+    {
+      id: 'tithe_receipt',
+      name: 'Comprovante de Contribuição',
+      text: 'Olá, {{nome}}! Sua contribuição (dízimo) no valor de *{{valor}}* referente ao dia *{{data}}* foi registrada com sucesso em nosso sistema. Muito obrigado por sua fidelidade e contribuição!'
+    },
+    {
+      id: 'complete_registration',
+      name: 'Finalizar Cadastro',
+      text: 'Ola {{nome}}!\n\nVoce esta cadastrado como voluntario da *Chama Church*! Para acessar sua area exclusiva e completar seu perfil, acesse o link abaixo:\n\n{{link_cadastro}}\n\nLa voce podera criar sua senha e visualizar seu historico de contribuicoes.\n\nQualquer duvida, estamos a disposicao!\n*Equipe Chama Church*'
+    },
+    {
+      id: 'monthly_thanks',
+      name: 'Agradecimento Mensal (Dizimistas)',
+      text: 'Ola, {{nome}}! Queremos agradecer de coracao pela sua fidelidade e amor a obra de Deus no mes de *{{mes}}*. Suas contribuicoes totalizaram *{{valor}}*. Que o Senhor continue abencoando poderosamente a sua vida e de toda sua familia!'
+    }
+  ];
+
+  const saveTemplateToDb = async (templateId, name, text) => {
+    if (!activeChurch?.id) return;
+    try {
+      const { data: existing } = await supabase
+        .from('message_templates')
+        .select('id')
+        .eq('church_id', activeChurch.id)
+        .eq('template_id', templateId)
+        .single();
+        
+      if (existing) {
+        await supabase
+          .from('message_templates')
+          .update({ name, text, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('message_templates')
+          .insert({ church_id: activeChurch.id, template_id: templateId, name, text });
+      }
+    } catch (e) {
+      console.error('Erro ao salvar template no banco:', e);
+    }
+  };
+
   const fetchAll = async (churchId) => {
     setLoading(true);
-    const [depts, vols, mems, vists, leadrs, tiths, settingsRes] = await Promise.all([
+    const [depts, vols, mems, vists, leadrs, tiths, settingsRes, tmpls] = await Promise.all([
       supabase.from('departments').select('*').eq('church_id', churchId).order('name'),
       supabase.from('volunteers').select('*').eq('church_id', churchId).order('name'),
       supabase.from('members').select('*').eq('church_id', churchId).order('name'),
@@ -119,6 +177,7 @@ export const AppProvider = ({ children }) => {
       supabase.from('coordenadores').select('*').eq('church_id', churchId).order('name'),
       supabase.from('tithes').select('*').eq('church_id', churchId).order('date', { ascending: false }),
       supabase.from('church_settings').select('*').eq('church_id', churchId).limit(1),
+      supabase.from('message_templates').select('*').eq('church_id', churchId),
     ]);
     if (depts.data) setDepartments(depts.data);
     if (vols.data) setVolunteers(vols.data);
@@ -128,6 +187,22 @@ export const AppProvider = ({ children }) => {
     if (tiths.data) setTithes(tiths.data);
     if (settingsRes.data && settingsRes.data.length > 0) setChurchSettings(settingsRes.data[0]);
     else setChurchSettings(null);
+    
+    if (tmpls && tmpls.data) {
+      setTemplates(prev => {
+        let merged = [...defaultTemplatesList];
+        tmpls.data.forEach(dbTmpl => {
+          const idx = merged.findIndex(t => t.id === dbTmpl.template_id);
+          if (idx >= 0) {
+            merged[idx] = { ...merged[idx], text: dbTmpl.text };
+          } else {
+            merged.push({ id: dbTmpl.template_id, name: dbTmpl.name, text: dbTmpl.text });
+          }
+        });
+        return merged;
+      });
+    }
+
     setLoading(false);
   };
 
@@ -570,6 +645,7 @@ export const AppProvider = ({ children }) => {
     deleteTithe,
     templates,
     setTemplates,
+    saveTemplateToDb,
     activeChurch,
     churches,
     churchSettings,
