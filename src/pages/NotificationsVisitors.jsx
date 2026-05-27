@@ -420,7 +420,7 @@ const NotificationsVisitors = () => {
 
         // ── MODO VISITANTES (Envia para Visitante + Coordenador) ──
         if (mode === 'visitors' || mode === 'auto') {
-          const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+          const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
           
           let churchSlug = activeChurch?.id || '';
           if (activeChurch?.name) {
@@ -498,7 +498,7 @@ const NotificationsVisitors = () => {
         }
         // ── MODO ACOMPANHAMENTO ──────────────────────────────
         else if (mode === 'followup') {
-          const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+          const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
           const confirmUrl = `${baseUrl}/confirmar/${v.id}`;
           const msg = (coordCheckMsg || 'Olá {{nome}}, o coordenador {{coordenador}} já falou com você? Confirme: {{confirmar}}')
             .replace(/{{nome}}/g, v.name || 'Visitante')

@@ -212,7 +212,8 @@ const Sidebar = () => {
         .replace(/\s+/g, '-');
     }
     const churchQuery = slug ? `?church=${slug}` : '';
-    const registerUrl = `${window.location.origin}/register${churchQuery}`;
+    const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+    const registerUrl = `${baseUrl}/register${churchQuery}`;
     navigator.clipboard.writeText(registerUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

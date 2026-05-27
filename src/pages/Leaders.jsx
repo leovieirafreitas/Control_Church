@@ -301,7 +301,8 @@ const Leaders = () => {
         .replace(/\s+/g, '-');
     }
     const churchQuery = slug ? `?church=${slug}` : '';
-    const url = `${window.location.origin}/register/coordenador${churchQuery}`;
+    const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+    const url = `${baseUrl}/register/coordenador${churchQuery}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
