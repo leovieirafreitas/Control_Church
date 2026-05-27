@@ -59,6 +59,7 @@ export const MANAUS_NEIGHBORHOODS_TO_ZONES = {
   "Viver Melhor IV": "Zona Norte",
   "Canaranas": "Zona Norte",
   "Vila Real": "Zona Norte",
+  "Alfredo Nascimento": "Zona Norte",
 
   // Zona Leste
   "Acariquara": "Zona Leste",

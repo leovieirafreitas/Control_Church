@@ -424,9 +424,18 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateVisitor = async (id, data) => {
+    const payload = { ...data };
+    if (payload.maritalStatus !== undefined) {
+      payload.marital_status = payload.maritalStatus;
+      delete payload.maritalStatus;
+    }
+    if (payload.age !== undefined) {
+      payload.age = payload.age ? parseInt(payload.age) : null;
+    }
+
     const { data: updated, error } = await supabase
       .from('visitors')
-      .update(data)
+      .update(payload)
       .eq('id', id)
       .select(`
         *,
