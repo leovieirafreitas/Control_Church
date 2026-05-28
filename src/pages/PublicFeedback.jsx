@@ -51,8 +51,9 @@ const PublicFeedback = () => {
       if (selectedChurchId && selectedChurchId.length !== 36) {
         const urlSlug = selectedChurchId.toLowerCase().trim();
         const matched = churchesData?.find(c => {
-          const churchSlug = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-          return churchSlug === urlSlug;
+          const longSlug = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          const shortSlug = c.name.toLowerCase().replace('chama church - ', '').replace('chama church ', '').trim().replace(/\s+/g, '-');
+          return longSlug === urlSlug || shortSlug === urlSlug;
         });
         
         if (matched) {
