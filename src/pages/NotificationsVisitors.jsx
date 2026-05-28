@@ -122,7 +122,7 @@ const NotificationsVisitors = () => {
     if (!text) return '';
     let churchSlug = 'sede';
     if (activeChurch?.name) {
-      churchSlug = activeChurch.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      churchSlug = activeChurch.name.toLowerCase().replace('chama church - ', '').replace('chama church ', '').trim().replace(/\s+/g, '-');
     }
     
     return text
@@ -471,7 +471,7 @@ const NotificationsVisitors = () => {
           
           let churchSlug = activeChurch?.id || '';
           if (activeChurch?.name) {
-            churchSlug = activeChurch.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            churchSlug = activeChurch.name.toLowerCase().replace('chama church - ', '').replace('chama church ', '').trim().replace(/\s+/g, '-');
           }
           const feedbackUrl = `${baseUrl}/pesquisa/${churchSlug}?visitor_id=${v.id}`;
           
