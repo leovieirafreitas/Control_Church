@@ -134,7 +134,7 @@ const NotificationsVisitors = () => {
       .replace(/{{idade}}/g, '25')
       .replace(/{{unidade}}/g, activeChurch?.name || 'Chama Church Sede')
       .replace(/{{coordenador}}/g, 'Pr. Marcos')
-      .replace(/{{confirmar}}/g, 'https://chama.app/confirm/123')
+      .replace(/{{confirmar}}/g, `https://www.chamachurch.com.br/confirmar/exemplo-id-123`)
       .replace(/{{feedback}}/g, `https://www.chamachurch.com.br/pesquisa/${churchSlug}?visitor_id=exemplo-id-123`);
   };
 
