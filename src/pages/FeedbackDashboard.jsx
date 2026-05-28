@@ -334,7 +334,7 @@ const FeedbackDashboard = () => {
         .trim()
         .replace(/\s+/g, '-');
     }
-    const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+    const baseUrl = import.meta.env.VITE_APP_URL || 'https://www.chamachurch.com.br';
     const link = `${baseUrl}/pesquisa${slug ? `/${slug}` : ''}`;
     navigator.clipboard.writeText(link);
     setCopied(true);

@@ -135,7 +135,7 @@ const NotificationsVisitors = () => {
       .replace(/{{unidade}}/g, activeChurch?.name || 'Chama Church Sede')
       .replace(/{{coordenador}}/g, 'Pr. Marcos')
       .replace(/{{confirmar}}/g, 'https://chama.app/confirm/123')
-      .replace(/{{feedback}}/g, `https://chamachurch.com.br/pesquisa/${churchSlug}?visitor_id=exemplo-id-123`);
+      .replace(/{{feedback}}/g, `https://www.chamachurch.com.br/pesquisa/${churchSlug}?visitor_id=exemplo-id-123`);
   };
 
   const visitorTemplates = [
@@ -467,7 +467,7 @@ const NotificationsVisitors = () => {
 
         // ── MODO VISITANTES (Envia para Visitante + Coordenador) ──
         if (mode === 'visitors' || mode === 'auto') {
-          const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+          const baseUrl = import.meta.env.VITE_APP_URL || 'https://www.chamachurch.com.br';
           
           let churchSlug = activeChurch?.id || '';
           if (activeChurch?.name) {
@@ -545,7 +545,7 @@ const NotificationsVisitors = () => {
         }
         // ── MODO ACOMPANHAMENTO ──────────────────────────────
         else if (mode === 'followup') {
-          const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+          const baseUrl = import.meta.env.VITE_APP_URL || 'https://www.chamachurch.com.br';
           const confirmUrl = `${baseUrl}/confirmar/${v.id}`;
           const msg = (coordCheckMsg || 'Olá {{nome}}, o coordenador {{coordenador}} já falou com você? Confirme: {{confirmar}}')
             .replace(/{{nome}}/g, v.name || 'Visitante')

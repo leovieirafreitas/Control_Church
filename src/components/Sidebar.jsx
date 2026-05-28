@@ -212,7 +212,7 @@ const Sidebar = () => {
         .replace(/\s+/g, '-');
     }
     const churchQuery = slug ? `?church=${slug}` : '';
-    const baseUrl = import.meta.env.VITE_APP_URL || 'https://chamachurch.com.br';
+    const baseUrl = import.meta.env.VITE_APP_URL || 'https://www.chamachurch.com.br';
     const registerUrl = `${baseUrl}/register${churchQuery}`;
     navigator.clipboard.writeText(registerUrl);
     setCopied(true);
