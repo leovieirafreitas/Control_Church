@@ -266,13 +266,6 @@ const NotificationsVisitors = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validação de tamanho
-    const MAX_SIZE = 50 * 1024 * 1024;
-    if (file.size > MAX_SIZE) {
-      showToast('O vídeo excede o limite de 50MB.', 'error');
-      return;
-    }
-
     setUploadingVideo(true);
     try {
       const fileName = `video_boas_vindas_${Date.now()}.${file.name.split('.').pop()}`;
