@@ -6,9 +6,12 @@ import DatePicker from '../components/DatePicker';
 import {
   CheckCircle, AlertCircle, Loader2, X, Users, RefreshCw, UserCheck, Radio,
   Upload, Clock, Sparkles, Settings2, Smartphone, MessageSquare,
-  Zap, ShieldCheck, Mail, Send, Bell, Timer, ExternalLink, Calendar
+  Zap, ShieldCheck, Mail, Send, Bell, Timer, ExternalLink, Calendar, Trash2
 } from 'lucide-react';
 import Dropdown from '../components/Dropdown';
+import { PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from '../utils/r2Client';
 
 const NotificationsVisitors = () => {
   const { activeChurch } = useChurch();
@@ -248,37 +251,81 @@ const NotificationsVisitors = () => {
 
   const fetchVideos = async () => {
     try {
-      const { data, error } = await supabase.storage.from('church-assets').list();
-      if (error) throw error;
-      const videos = (data || []).filter(file => file.name.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i));
+      const command = new ListObjectsV2Command({ Bucket: R2_BUCKET_NAME });
+      const response = await r2Client.send(command);
+      const videos = (response.Contents || []).filter(file => file.Key.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i));
       const videosWithUrls = videos.map(v => ({
-        ...v,
-        url: supabase.storage.from('church-assets').getPublicUrl(v.name).data.publicUrl
+        name: v.Key,
+        url: `${R2_PUBLIC_URL}/${encodeURIComponent(v.Key)}`
       }));
       setAvailableVideos(videosWithUrls);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Erro ao listar vídeos R2:', e); }
   };
 
   const handleVideoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validação de tamanho (50MB é o limite do Supabase Free Plan)
+    // Validação de tamanho
     const MAX_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      showToast('O vídeo excede o limite de 50MB permitido pelo plano gratuito.', 'error');
+      showToast('O vídeo excede o limite de 50MB.', 'error');
       return;
     }
 
     setUploadingVideo(true);
     try {
       const fileName = `video_boas_vindas_${Date.now()}.${file.name.split('.').pop()}`;
-      const { error } = await supabase.storage.from('church-assets').upload(fileName, file);
-      if (error) throw error;
+      
+      const command = new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: fileName,
+        ContentType: file.type,
+      });
+
+      const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn: 3600 });
+      
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Falha no upload: ${uploadResponse.statusText}`);
+      }
+      
       fetchVideos();
-      showToast('Vídeo enviado!', 'success');
-    } catch (err) { showToast(err.message, 'error'); }
+      showToast('Vídeo enviado com sucesso para o R2!', 'success');
+    } catch (err) { 
+      showToast(err.message, 'error'); 
+    }
     finally { setUploadingVideo(false); }
+  };
+  const handleDeleteVideo = async (urlToDelete) => {
+    if (!window.confirm('Tem certeza que deseja apagar este vídeo permanentemente?')) return;
+    
+    try {
+      const key = urlToDelete.replace(`${R2_PUBLIC_URL}/`, '');
+      const command = new DeleteObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: decodeURIComponent(key),
+      });
+
+      await r2Client.send(command);
+      
+      if (sundayVideoUrl === urlToDelete) {
+        setSundayVideoUrl('');
+      }
+      
+      fetchVideos();
+      showToast('Vídeo apagado com sucesso!', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao apagar vídeo.', 'error');
+    }
   };
 
   const handleSaveAll = async () => {
@@ -794,14 +841,25 @@ const NotificationsVisitors = () => {
                                 ...availableVideos.map(v => ({ id: v.url, name: v.name }))
                               ]}
                               value={sundayVideoUrl}
-                              valueLabel={sundayVideoUrl ? availableVideos.find(v => v.url === sundayVideoUrl)?.name : 'Apenas Texto'}
+                              valueLabel={!sundayVideoUrl ? 'Apenas Texto' : (availableVideos.find(v => v.url === sundayVideoUrl)?.name || 'Apenas Texto')}
                               onSelect={(v) => setSundayVideoUrl(v.id)}
                               placeholder="Selecione um vídeo"
                             />
                           </div>
-                          {sundayVideoUrl && (
-                            <div style={{ width: '120px', height: '60px', borderRadius: '8px', overflow: 'hidden', background: 'black' }}>
-                              <video src={sundayVideoUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          {(sundayVideoUrl && availableVideos.some(v => v.url === sundayVideoUrl)) && (
+                            <div style={{ width: '160px', height: '90px', borderRadius: '12px', overflow: 'hidden', background: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', position: 'relative' }}>
+                              <video src={`${sundayVideoUrl}#t=0.1`} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button
+                                onClick={() => handleDeleteVideo(sundayVideoUrl)}
+                                style={{
+                                  position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', border: 'none', borderRadius: '6px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', transition: 'background 0.2s'
+                                }}
+                                title="Apagar Vídeo"
+                                onMouseOver={e => e.currentTarget.style.background = '#dc2626'}
+                                onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)'}
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </div>
                           )}
                         </div>
