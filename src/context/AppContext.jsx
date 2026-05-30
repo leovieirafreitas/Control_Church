@@ -150,7 +150,7 @@ export const AppProvider = ({ children }) => {
         .select('id')
         .eq('church_id', activeChurch.id)
         .eq('template_id', templateId)
-        .single();
+        .maybeSingle();
         
       if (existing) {
         await supabase
