@@ -120,10 +120,7 @@ const NotificationsVisitors = () => {
 
   const formatPreview = (text) => {
     if (!text) return '';
-    let churchSlug = 'sede';
-    if (activeChurch?.name) {
-      churchSlug = activeChurch.name.toLowerCase().replace('chama church - ', '').replace('chama church ', '').trim().replace(/\s+/g, '-');
-    }
+    let churchId = activeChurch?.id || 'id-da-unidade';
     
     return text
       .replace(/{{nome}}/g, 'João Silva')
@@ -135,7 +132,7 @@ const NotificationsVisitors = () => {
       .replace(/{{unidade}}/g, activeChurch?.name || 'Chama Church Sede')
       .replace(/{{coordenador}}/g, 'Pr. Marcos')
       .replace(/{{confirmar}}/g, `https://www.chamachurch.com.br/confirmar/exemplo-id-123`)
-      .replace(/{{feedback}}/g, `https://www.chamachurch.com.br/pesquisa/${churchSlug}?visitor_id=exemplo-id-123`);
+      .replace(/{{feedback}}/g, `https://www.chamachurch.com.br/pesquisa/${churchId}?visitor_id=exemplo-id-123`);
   };
 
   const visitorTemplates = [
@@ -462,11 +459,8 @@ const NotificationsVisitors = () => {
         if (mode === 'visitors' || mode === 'auto') {
           const baseUrl = window.location.origin;
           
-          let churchSlug = activeChurch?.id || '';
-          if (activeChurch?.name) {
-            churchSlug = activeChurch.name.toLowerCase().replace('chama church - ', '').replace('chama church ', '').trim().replace(/\s+/g, '-');
-          }
-          const feedbackUrl = `${baseUrl}/pesquisa/${churchSlug}?visitor_id=${v.id}`;
+          const churchId = activeChurch?.id || '';
+          const feedbackUrl = `${baseUrl}/pesquisa/${churchId}?visitor_id=${v.id}`;
           
           const msg = (sundayMsg || '')
             .replace(/{{nome}}/g, v.name || 'Visitante')
