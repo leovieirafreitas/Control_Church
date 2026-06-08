@@ -43,6 +43,7 @@ const FeedbackDashboard = () => {
   const now = new Date();
   const [filterMonth, setFilterMonth] = useState((now.getMonth() + 1).toString());
   const [filterYear, setFilterYear] = useState(now.getFullYear().toString());
+  const [filterDay, setFilterDay] = useState('all');
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const dropdownRef = useRef(null);
 
@@ -79,11 +80,30 @@ const FeedbackDashboard = () => {
     } else {
       const m = parseInt(filterMonth);
       const y = parseInt(filterYear);
-      start = new Date(y, m - 1, 1).toISOString().split('T')[0];
-      end = new Date(y, m, 0).toISOString().split('T')[0];
+      if (filterDay === 'all') {
+        start = new Date(y, m - 1, 1).toISOString().split('T')[0];
+        end = new Date(y, m, 0).toISOString().split('T')[0];
+      } else {
+        const d = parseInt(filterDay);
+        const paddedMonth = m.toString().padStart(2, '0');
+        const paddedDay = d.toString().padStart(2, '0');
+        start = `${y}-${paddedMonth}-${paddedDay}`;
+        end = `${y}-${paddedMonth}-${paddedDay}`;
+      }
     }
     setDateRange({ start, end });
-  }, [filterMonth, filterYear]);
+  }, [filterMonth, filterYear, filterDay]);
+
+  const daysInMonth = filterMonth !== 'all' 
+    ? new Date(parseInt(filterYear), parseInt(filterMonth), 0).getDate() 
+    : 0;
+  const dayOptions = [
+    { value: 'all', label: 'Todos os Dias' },
+    ...Array.from({ length: daysInMonth }, (_, i) => ({
+      value: (i + 1).toString(),
+      label: `Dia ${i + 1}`
+    }))
+  ];
 
   useEffect(() => {
     if (dateRange.start && dateRange.end) {
@@ -194,7 +214,8 @@ const FeedbackDashboard = () => {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const churchName = activeChurch?.name || 'Rede Chama';
     const monthLabel = months.find(m => m.value === filterMonth)?.label || '';
-    const periodLabel = filterMonth === 'all' ? `Ano ${filterYear}` : `${monthLabel} / ${filterYear}`;
+    const dayLabel = filterDay !== 'all' ? `Dia ${filterDay} de ` : '';
+    const periodLabel = filterMonth === 'all' ? `Ano ${filterYear}` : `${dayLabel}${monthLabel} / ${filterYear}`;
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // ── Header ──
@@ -434,7 +455,7 @@ const FeedbackDashboard = () => {
     color: dropdownOpen === key ? 'var(--primary-dark)' : '#334155',
     boxShadow: dropdownOpen === key ? '0 0 0 3px var(--primary-light)' : '0 1px 2px rgba(0,0,0,0.05)',
     transition: 'all 0.2s',
-    minWidth: key === 'month' ? '140px' : '90px'
+    minWidth: key === 'month' ? '140px' : key === 'day' ? '120px' : '90px'
   });
 
   const dropPanel = {
@@ -475,6 +496,31 @@ const FeedbackDashboard = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', position: 'relative', zIndex: 1100 }} ref={dropdownRef}>
+            {/* Day */}
+            {filterMonth !== 'all' && (
+              <div style={{ position: 'relative' }}>
+                <button style={pickerBtnStyle('day')}
+                  onClick={() => setDropdownOpen(dropdownOpen === 'day' ? null : 'day')}>
+                  <span>{filterDay === 'all' ? 'Todos os Dias' : `Dia ${filterDay}`}</span>
+                  <ChevronDown size={16} style={{
+                    color: dropdownOpen === 'day' ? 'var(--primary)' : '#94a3b8',
+                    transition: 'transform 0.25s ease',
+                    transform: dropdownOpen === 'day' ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }} />
+                </button>
+                {dropdownOpen === 'day' && (
+                  <div style={dropPanel}>
+                    {dayOptions.map(d => (
+                      <div key={d.value}
+                        style={dropItem(filterDay === d.value)}
+                        onClick={() => { setFilterDay(d.value); setDropdownOpen(null); }}
+                      >{d.label}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Month */}
             <div style={{ position: 'relative' }}>
               <button style={pickerBtnStyle('month')}
