@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 import logoImg from '../assets/cc-logo-small.png';
 import { 
   Edit2, X, Check, Search, Trash2, UserPlus, Calendar, Phone, 
   MapPin, ArrowRight, Shield, Save, Tag, AlertCircle, Clock, 
-  CheckCircle, MessageSquare, FileDown, Heart
+  CheckCircle, MessageSquare, FileDown, Heart, Building2
 } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import Dropdown from '../components/Dropdown';
@@ -158,16 +159,38 @@ const AddVisitorModal = ({ leaders, neighborhoods, onSave, onClose }) => {
 };
 
 /* ─── Modal de Edição de Visitante ────────────────────────── */
-const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) => {
+const EditVisitorModal = ({ visitor, leaders, neighborhoods, churches, onSave, onClose }) => {
   const [form, setForm] = useState({
     name: visitor.name,
     phone: visitor.phone ?? '',
     neighborhood: visitor.neighborhood ?? '',
     assigned_leader_id: visitor.assigned_leader_id ?? null,
     maritalStatus: visitor.maritalStatus ?? '',
-    age: visitor.age ?? ''
+    age: visitor.age ?? '',
+    church_id: visitor.church_id ?? ''
   });
   const [saving, setSaving] = useState(false);
+  const [localLeaders, setLocalLeaders] = useState(leaders);
+  const [loadingLeaders, setLoadingLeaders] = useState(false);
+
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      if (!form.church_id) return;
+      setLoadingLeaders(true);
+      const { data } = await supabase
+        .from('coordenadores')
+        .select('id, name')
+        .eq('church_id', form.church_id)
+        .order('name');
+      
+      if (data) {
+        setLocalLeaders(data);
+      }
+      setLoadingLeaders(false);
+    };
+
+    fetchLeaders();
+  }, [form.church_id]);
 
   const handlePhoneChange = (e) => {
     let v = e.target.value.replace(/\D/g, '');
@@ -276,11 +299,28 @@ const EditVisitorModal = ({ visitor, leaders, neighborhoods, onSave, onClose }) 
             <Dropdown
               label="Coordenador Responsável"
               value={form.assigned_leader_id}
-              valueLabel={leaders.find(l => l.id === form.assigned_leader_id)?.name}
-              options={leaders.map(l => ({ value: l.id, label: l.name }))}
+              valueLabel={localLeaders.find(l => l.id === form.assigned_leader_id)?.name}
+              options={localLeaders.map(l => ({ value: l.id, label: l.name }))}
               onSelect={opt => setForm(p => ({ ...p, assigned_leader_id: opt.value }))}
-              placeholder="Selecione um coordenador..."
+              placeholder={loadingLeaders ? "Carregando..." : "Selecione um coordenador..."}
               icon={Shield}
+            />
+          </div>
+
+          <div>
+            <Dropdown
+              label="Unidade (Igreja)"
+              value={form.church_id}
+              valueLabel={churches?.find(c => c.id === form.church_id)?.name}
+              options={churches?.map(c => ({ value: c.id, label: c.name })) || []}
+              onSelect={opt => setForm(p => {
+                if (p.church_id !== opt.value) {
+                  return { ...p, church_id: opt.value, assigned_leader_id: null };
+                }
+                return p;
+              })}
+              placeholder="Selecione a unidade..."
+              icon={Building2}
             />
           </div>
 
@@ -321,7 +361,7 @@ const Visitors = () => {
   const { 
     visitors, leaders, addVisitor, updateVisitor, deleteVisitor, 
     promoteVisitorToMember, visitorSearch, setVisitorSearch, loading,
-    activeChurch 
+    activeChurch, churches 
   } = useApp();
   
   // Computar bairros únicos do sistema + mapeamento oficial
@@ -860,12 +900,13 @@ const Visitors = () => {
       </div>
 
       {editingVisitor && (
-        <EditVisitorModal 
-          visitor={editingVisitor} 
+        <EditVisitorModal
+          visitor={editingVisitor}
           leaders={leaders}
-          onSave={updateVisitor}
           neighborhoods={systemNeighborhoods}
-          onClose={() => setEditingVisitor(null)} 
+          churches={churches}
+          onSave={updateVisitor}
+          onClose={() => setEditingVisitor(null)}
         />
       )}
 
