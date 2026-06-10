@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Network, DollarSign, LogOut, Copy, Bell, ChevronDown, Check, Building2, MessageSquare, Settings, X, Clock, Mail, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Network, DollarSign, LogOut, Copy, Bell, ChevronDown, Check, Building2, MessageSquare, Settings, X, Clock, Mail, MapPin, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChurch } from '../context/ChurchContext';
 import logoImg from '../assets/logo.png';
@@ -268,6 +268,7 @@ const Sidebar = () => {
       ]
     },
     { name: 'Feedback', icon: <MessageSquare size={20} />, path: '/feedback', mobileHidden: true },
+    { name: 'Social', icon: <Heart size={20} />, path: '/social' },
   ];
 
   // Abreviação do nome da igreja para exibição compacta

@@ -16,6 +16,8 @@ import PublicFeedback from './pages/PublicFeedback';
 import FeedbackDashboard from './pages/FeedbackDashboard';
 import VisitorConfirmation from './pages/VisitorConfirmation';
 import PublicDecisions from './pages/PublicDecisions';
+import SocialDashboard from './pages/SocialDashboard';
+import PublicSocialRegistration from './pages/PublicSocialRegistration';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ChurchProvider } from './context/ChurchContext';
@@ -53,6 +55,7 @@ function AppRoutes() {
           <Route path="/pesquisa/:churchId?" element={<PublicFeedback />} />
           <Route path="/confirmar/:visitorId" element={<VisitorConfirmation />} />
           <Route path="/decisoes" element={<PublicDecisions />} />
+          <Route path="/cadastro-social/:campaignId" element={<PublicSocialRegistration />} />
           <Route
             path="/"
             element={
@@ -71,6 +74,7 @@ function AppRoutes() {
             <Route path="notifications" element={<Notifications />} />
             <Route path="notifications/visitantes" element={<NotificationsVisitors />} />
             <Route path="feedback" element={<FeedbackDashboard />} />
+            <Route path="social" element={<SocialDashboard />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
